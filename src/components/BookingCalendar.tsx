@@ -2,11 +2,9 @@ import React, { useState } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import { useQuery } from '@tanstack/react-query'
-import { getDesks, getFloors, getDesksByFloor } from '../api'
-import type { Desk } from '../api'
+import { getDesks, getFloors } from '../api'
 
 const BookingCalendar: React.FC = () => {
-  const [selectedFloor, setSelectedFloor] = useState<string>('')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
 
   const { data: floors, isLoading: floorsLoading } = useQuery({
@@ -19,9 +17,8 @@ const BookingCalendar: React.FC = () => {
     isLoading: desksLoading,
     error,
   } = useQuery({
-    queryKey: ['desks', selectedFloor],
-    queryFn: () =>
-      selectedFloor ? getDesksByFloor(selectedFloor) : getDesks(),
+    queryKey: ['desks'],
+    queryFn: getDesks,
   })
 
   if (floorsLoading || desksLoading) return <div>Loading...</div>
@@ -31,13 +28,22 @@ const BookingCalendar: React.FC = () => {
   const bookedDesks = desks?.filter((d) => d.isBooked).length || 0
   const occupancyRate = totalDesks > 0 ? (bookedDesks / totalDesks) * 100 : 0
 
+  const floorStats = floors?.map((floor) => {
+    const floorDesks =
+      desks?.filter((d) => d.floorName === floor.floorName) || []
+    const total = floorDesks.length
+    const booked = floorDesks.filter((d) => d.isBooked).length
+    const available = total - booked
+    return { ...floor, total, booked, available }
+  })
+
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">
         Availability and Booking Calendar
       </h2>
 
-      <div className="mb-4">
+      {/* <div className="mb-4">
         <label
           htmlFor="floor-select"
           className="block text-sm font-medium mb-2"
@@ -57,17 +63,12 @@ const BookingCalendar: React.FC = () => {
             </option>
           ))}
         </select>
-      </div>
+      </div> */}
 
       <div className="mb-4">
         <p>Total Desks: {totalDesks}</p>
         <p>Booked Desks: {bookedDesks}</p>
         <p>Occupancy Rate: {occupancyRate.toFixed(2)}%</p>
-        {selectedFloor && totalDesks === 0 && (
-          <p className="text-red-500">
-            This floor is not available (no desks).
-          </p>
-        )}
       </div>
 
       <div className="flex flex-col gap-4">
@@ -109,27 +110,25 @@ const BookingCalendar: React.FC = () => {
         </div>
 
         <div>
-          <h3 className="text-xl mb-2">Desk List</h3>
-          <ul className="space-y-2">
-            {desks?.map((desk: Desk) => (
-              <li key={desk.id} className="border p-2 rounded">
-                <strong>Code:</strong> {desk.id}
-                <br />
-                <strong>Description:</strong> Desk at ({desk.x}, {desk.y})<br />
-                <strong>Floor:</strong> {desk.floor}
-                <br />
-                <strong>Status:</strong>{' '}
-                {desk.isBooked ? 'Booked' : 'Available'}
-                <br />
-                {desk.bookedBy && (
-                  <span>
-                    <strong>Booked by:</strong> {desk.bookedBy}
-                    <br />
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+          <h3 className="text-xl mb-2">Floor Overview</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {floorStats?.map((stat) => {
+              let bgColor = 'bg-green-500'
+              if (stat.available === 0) bgColor = 'bg-red-500'
+              else if (stat.booked > 0) bgColor = 'bg-orange-500'
+              return (
+                <div
+                  key={stat.id}
+                  className={`p-4 rounded ${bgColor} text-white`}
+                >
+                  <h4 className="font-bold">{stat.floorName}</h4>
+                  <p>Total Desks: {stat.total}</p>
+                  <p>Available: {stat.available}</p>
+                  <p>Booked: {stat.booked}</p>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>
