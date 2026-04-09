@@ -113,8 +113,7 @@ const BookingCalendar: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {floorStats?.map((stat) => {
               let bgColor = 'bg-green-500'
-              if (stat.booked === stat.total) bgColor = 'bg-red-500'
-              if (stat.booked === 0 || stat.booked < stat.total / 2) bgColor = 'bg-green-500'
+              if (stat.booked === stat.total) bgColor = 'bg-red-800'
               else if (stat.booked >= stat.total / 2) bgColor = 'bg-orange-500'
               return (
                 <div
