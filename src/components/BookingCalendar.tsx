@@ -29,8 +29,7 @@ const BookingCalendar: React.FC = () => {
   const occupancyRate = totalDesks > 0 ? (bookedDesks / totalDesks) * 100 : 0
 
   const floorStats = floors?.map((floor) => {
-    const floorDesks =
-      desks?.filter((d) => d.floorName === floor.floorName) || []
+    const floorDesks = desks?.filter((d) => d.floorId === floor.id) || []
     const total = floorDesks.length
     const booked = floorDesks.filter((d) => d.isBooked).length
     const available = total - booked
@@ -114,8 +113,9 @@ const BookingCalendar: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {floorStats?.map((stat) => {
               let bgColor = 'bg-green-500'
-              if (stat.available === 0) bgColor = 'bg-red-500'
-              else if (stat.booked > 0) bgColor = 'bg-orange-500'
+              if (stat.booked === stat.total) bgColor = 'bg-red-500'
+              if (stat.booked === 0 || stat.booked < stat.total / 2) bgColor = 'bg-green-500'
+              else if (stat.booked >= stat.total / 2) bgColor = 'bg-orange-500'
               return (
                 <div
                   key={stat.id}
