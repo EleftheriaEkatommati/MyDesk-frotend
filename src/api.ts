@@ -6,7 +6,16 @@ export interface Desk {
   y: number
   isBooked: boolean
   rotation: number
+  floor: string
+  floorId: number
+  floorName: string | null
   bookedBy?: string | null
+}
+
+export interface Floor {
+  id: number
+  floorNumber: number
+  floorName: string
 }
 
 export interface User {
@@ -16,7 +25,6 @@ export interface User {
 }
 
 const BASE_URL = 'http://localhost:8000/api'
-
 
 const getHeaders = (token?: string) => ({
   'Content-Type': 'application/json',
@@ -48,6 +56,20 @@ export const getDesks = async (): Promise<Desk[]> => {
   const res = await fetch(`${BASE_URL}/desks`)
   if (!res.ok) throw new Error('Failed to fetch desks')
   return res.json() // Array of Desk objects
+}
+
+export const getFloors = async (): Promise<Floor[]> => {
+  const res = await fetch(`${BASE_URL}/desks/floors`)
+  if (!res.ok) throw new Error('Failed to fetch floors')
+  return res.json() // Array of Floor objects
+}
+
+export const getDesksByFloor = async (floor: string): Promise<Desk[]> => {
+  const res = await fetch(
+    `${BASE_URL}/desks/floor/${encodeURIComponent(floor)}`,
+  )
+  if (!res.ok) throw new Error('Failed to fetch desks for floor')
+  return res.json() // Array of Desk objects for the floor
 }
 
 export const bookDesk = async (
