@@ -11,15 +11,22 @@ import { useAuth } from '../../auth'
 import { useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/floor/$floorId')({
-  loader: async ({ params }) => {
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      date: typeof search.date === 'string' ? search.date : undefined,
+    }
+  },
+  loader: async ({ params, search }) => {
     const numericFloorId = parseInt(params.floorId)
+    const dateParam = (search as { date?: string })?.date || new Date().toISOString().split('T')[0]
+    
     try {
       // Fetch floor and desks in parallel for speed
       const [floor, floorDesks] = await Promise.all([
         getFloor(numericFloorId),
-        getDesksByFloor(numericFloorId),
+        getDesksByFloor(numericFloorId, dateParam),
       ])
-      return { floor, floorDesks }
+      return { floor, floorDesks, date: dateParam }
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw notFound()
@@ -34,15 +41,25 @@ export const Route = createFileRoute('/floor/$floorId')({
 
 function FloorDetail() {
   const { floor, floorDesks: initialDesks } = Route.useLoaderData()
+  const search = Route.useSearch()
   const [desks, setDesks] = useState<Desk[]>(initialDesks)
+  const [loading, setLoading] = useState(false)
 
+  const currentDate = (search as { date?: string })?.date || new Date().toISOString().split('T')[0]
+
+  // Refetch desks when the date in search params changes
   useEffect(() => {
-    setDesks(initialDesks)
-  }, [initialDesks])
+    setLoading(true)
+    getDesksByFloor(floor.id, currentDate)
+      .then(setDesks)
+      .finally(() => setLoading(false))
+  }, [currentDate, floor.id])
 
   const totalDesks = desks.length
   const bookedDesks = desks.filter((d) => d.isBooked).length
   const availableDesks = totalDesks - bookedDesks
+
+  if (loading) return <div className="p-4">Loading...</div>
 
   return (
     <div className="p-4">
@@ -55,7 +72,7 @@ function FloorDetail() {
         <p className="text-lg">Booked: {bookedDesks}</p>
       </div>
 
-      <FloorPlan desks={desks} setDesks={setDesks} />
+      <FloorPlan desks={desks} setDesks={setDesks} date={currentDate} />
     </div>
   )
 }
@@ -63,9 +80,11 @@ function FloorDetail() {
 function FloorPlan({
   desks,
   setDesks,
+  date,
 }: {
   desks: Desk[]
   setDesks: React.Dispatch<React.SetStateAction<Desk[]>>
+  date: string
 }) {
   const { user, token } = useAuth()
   const [error, setError] = useState<string | null>(null)
@@ -104,7 +123,7 @@ function FloorPlan({
 
     try {
       if (isBooking) {
-        await bookDesk(desk.id, user.id, token)
+        await bookDesk(desk.id, user.id, token,date)
       } else {
         await unbookDesk(desk.id, token)
       }
@@ -184,6 +203,36 @@ function FloorPlan({
             </div>
           )
         })}
+      </div>
+      {/* Legend */}
+      <div className="mt-8 flex gap-6 bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm w-fit">
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-5 bg-emerald-100 border-2 border-emerald-400 dark:bg-emerald-900/60 dark:border-emerald-600 rounded-sm" />
+            <div className="w-4 h-2 bg-emerald-400 dark:bg-emerald-600 rounded-b-full mt-[2px]" />
+          </div>
+          <span className="font-semibold text-slate-700 dark:text-slate-300">
+            Available
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-5 bg-red-200 border-2 border-red-400 dark:bg-red-900/60 dark:border-red-600 rounded-sm" />
+            <div className="w-4 h-2 bg-red-400 dark:bg-red-700 rounded-b-full mt-[2px]" />
+          </div>
+          <span className="font-semibold text-slate-700 dark:text-slate-300">
+            Booked
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-5 bg-blue-200 border-2 border-blue-400 dark:bg-blue-900/60 dark:border-blue-600 rounded-sm" />
+            <div className="w-4 h-2 bg-blue-400 dark:bg-blue-700 rounded-b-full mt-[2px]" />
+          </div>
+          <span className="font-semibold text-slate-700 dark:text-slate-300">
+            Booked by you
+          </span>
+        </div>
       </div>
     </div>
   )

@@ -12,26 +12,38 @@ import {
   UserIcon,
 } from '@heroicons/react/24/solid'
 import { getDesks, getFloors } from '../api'
-
-const BookingCalendar: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const getTomorrow = () => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return d
+  }
+  const tomorrow = getTomorrow()
+  const BookingCalendar: React.FC = () => {
+  const [selectedDate, setSelectedDate] = useState<Date>(getTomorrow())
 
   const { data: floors, isLoading: floorsLoading } = useQuery({
     queryKey: ['floors'],
     queryFn: getFloors,
   })
 
+  const selectedDateString = selectedDate.toLocaleDateString('en-CA')
+
   const {
     data: desks,
     isLoading: desksLoading,
     error,
   } = useQuery({
-    queryKey: ['desks'],
-    queryFn: getDesks,
+    queryKey: ['desks', selectedDateString],
+    queryFn: () => getDesks(selectedDateString),
   })
 
-  if (floorsLoading || desksLoading) return <div>Loading...</div>
-  if (error) return <div>Error loading data</div>
+  if (floorsLoading || desksLoading) return <div className="p-4">Loading...</div>
+  if (error) {
+    console.error('Desks query error:', error)
+    return <div className="p-4 text-red-500">Error loading desks: {String(error)}</div>
+  }
+  if (!desks) return <div className="p-4 text-red-500">No desks data</div>
+  if (!floors) return <div className="p-4 text-red-500">No floors data</div>
 
   const totalDesks = desks?.length || 0
   const bookedDesks = desks?.filter((d) => d.isBooked).length || 0
@@ -112,6 +124,7 @@ const BookingCalendar: React.FC = () => {
           <Calendar
             onChange={(value) => setSelectedDate(value as Date)}
             value={selectedDate}
+            minDate={tomorrow}
           />
           <p className="mt-2">Selected date: {selectedDate.toDateString()}</p>
           {/* Note: Historical data per date not available in current API */}
@@ -134,6 +147,7 @@ const BookingCalendar: React.FC = () => {
                 <Link
                   to="/floor/$floorId"
                   params={{ floorId: stat.id.toString() }}
+                  search={{ date: selectedDateString }}
                   className={`block p-4 rounded-lg ${bgColor} text-white shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer`}
                 >
                   <div className="flex items-center justify-between mb-2">

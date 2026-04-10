@@ -39,8 +39,8 @@ export async function getFloors(): Promise<Floor[]> {
   return res.json()
 }
 
-export async function getDesks(): Promise<Desk[]> {
-  const res = await fetch(`${API_BASE}/desks`)
+export async function getDesks(date: string): Promise<Desk[]> {
+  const res = await fetch(`${API_BASE}/desks?date=${date}`)
   if (!res.ok) throw new Error('Failed to fetch desks')
   return res.json()
 }
@@ -90,19 +90,19 @@ export async function getCurrentUser(token: string): Promise<User | null> {
   return res.json()
 }
 
-export async function getDesksByFloor(floorId: number): Promise<Desk[]> {
-  // Path updated based on user's documentation
-  const res = await fetch(`${API_BASE}/desks/floor/${floorId}`)
+
+ export async function getDesksByFloor(floorId: number, date: string): Promise<Desk[]> {
+  const res = await fetch(`${API_BASE}/desks/floor/${floorId}?date=${date}`)
   if (!res.ok) {
-    throw new Error(`Failed to fetch desks for floor ${floorId}`)
+    throw new Error(`Failed to fetch desks for floor ${floorId} on date ${date}`)
   }
   return res.json()
 }
-
 export async function bookDesk(
   deskId: string,
   userId: string,
   token: string,
+  date: string,
 ): Promise<Desk> {
   const res = await fetch(`${API_BASE}/desks/${deskId}/book`, {
     method: 'POST',
@@ -111,7 +111,10 @@ export async function bookDesk(
       Authorization: `Bearer ${token}`,
     },
     // Backend expects user_id as an integer
-    body: JSON.stringify({ user_id: parseInt(userId, 10) }),
+    body: JSON.stringify({
+      user_id: parseInt(userId, 10),
+      booking_date: date,
+    }),
   })
   if (!res.ok) {
     throw new Error(`Failed to book desk ${deskId}`)
