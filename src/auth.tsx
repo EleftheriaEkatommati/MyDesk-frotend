@@ -6,7 +6,12 @@ import {
   useEffect,
   useState,
 } from 'react'
-import { getCurrentUser, login as apiLogin, type User } from './api'
+import {
+  getCurrentUser,
+  login as apiLogin,
+  type AuthUser,
+  type User,
+} from './api'
 
 // --- AuthService Class ---
 type AuthState = { user: User | null; token: string | null }
@@ -39,18 +44,19 @@ class AuthService {
   async login(username: string, password?: string) {
     // Mock login for testing - bypasses the API
     if (username === 'test@example.com' && password === 'password123') {
-      const mockUser = { id: '1', username, name: 'Test User', token: 'mock-jwt-token' }
-      this.user = mockUser as unknown as User
+      const mockUser: User = { id: '1', email: username, name: 'Test User' }
+      this.user = mockUser
       this.token = 'mock-jwt-token'
       localStorage.setItem('token', 'mock-jwt-token')
       this.notify()
       return
     }
 
-    const user = await apiLogin(username, password)
+    const authUser: AuthUser = await apiLogin(username, password)
+    const { token, ...user } = authUser
     this.user = user
-    this.token = user.token
-    localStorage.setItem('token', user.token)
+    this.token = token
+    localStorage.setItem('token', token)
     this.notify()
   }
 
@@ -60,7 +66,7 @@ class AuthService {
     localStorage.removeItem('token')
     this.notify()
   }
-  
+
   subscribe(callback: (state: AuthState) => void) {
     this.subscribers.add(callback)
     return () => this.subscribers.delete(callback)
@@ -94,5 +100,9 @@ export function useAuth() {
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
-  return { ...context, login: authService.login.bind(authService), logout: authService.logout.bind(authService) }
+  return {
+    ...context,
+    login: authService.login.bind(authService),
+    logout: authService.logout.bind(authService),
+  }
 }

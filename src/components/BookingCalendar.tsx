@@ -2,6 +2,15 @@ import React, { useState } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import {
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  XCircleIcon,
+  Squares2X2Icon,
+  CheckIcon,
+  UserIcon,
+} from '@heroicons/react/24/solid'
 import { getDesks, getFloors } from '../api'
 
 const BookingCalendar: React.FC = () => {
@@ -113,18 +122,48 @@ const BookingCalendar: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {floorStats?.map((stat) => {
               let bgColor = 'bg-green-500'
-              if (stat.booked === stat.total) bgColor = 'bg-red-800'
-              else if (stat.booked >= stat.total / 2) bgColor = 'bg-orange-500'
+              let Icon = CheckCircleIcon
+              if (stat.booked === stat.total) {
+                bgColor = 'bg-red-800'
+                Icon = XCircleIcon
+              } else if (stat.booked >= stat.total / 2) {
+                bgColor = 'bg-orange-500'
+                Icon = ExclamationTriangleIcon
+              }
               return (
-                <div
-                  key={stat.id}
-                  className={`p-4 rounded ${bgColor} text-white`}
+                <Link
+                  to="/floor/$floorId"
+                  params={{ floorId: stat.id.toString() }}
+                  className={`block p-4 rounded-lg ${bgColor} text-white shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer`}
                 >
-                  <h4 className="font-bold">{stat.floorName}</h4>
-                  <p>Total Desks: {stat.total}</p>
-                  <p>Available: {stat.available}</p>
-                  <p>Booked: {stat.booked}</p>
-                </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-bold text-lg">{stat.floorName}</h4>
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <div className="text-sm space-y-2 bg-white/10 rounded-md p-3 backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Squares2X2Icon className="h-4 w-4" />
+                        <span className="font-semibold">Total:</span>
+                      </div>
+                      <span className="font-bold">{stat.total}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckIcon className="h-4 w-4" />
+                        <span className="font-semibold">Available:</span>
+                      </div>
+                      <span className="font-bold">{stat.available}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="h-4 w-4" />
+                        <span className="font-semibold">Booked:</span>
+                      </div>
+                      <span className="font-bold">{stat.booked}</span>
+                    </div>
+                  </div>
+                </Link>
               )
             })}
           </div>
