@@ -12,14 +12,14 @@ import {
   UserIcon,
 } from '@heroicons/react/24/solid'
 import { getDesks, getFloors } from '../api'
-  const getTomorrow = () => {
-    const d = new Date()
-    d.setDate(d.getDate() + 1)
-    return d
-  }
-  const tomorrow = getTomorrow()
-  const BookingCalendar: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(getTomorrow())
+const getToday = () => {
+  const d = new Date()
+  return d
+}
+const today = getToday()
+
+const BookingCalendar: React.FC = () => {
+  const [selectedDate, setSelectedDate] = useState<Date>(getToday())
 
   const { data: floors, isLoading: floorsLoading } = useQuery({
     queryKey: ['floors'],
@@ -37,10 +37,15 @@ import { getDesks, getFloors } from '../api'
     queryFn: () => getDesks(selectedDateString),
   })
 
-  if (floorsLoading || desksLoading) return <div className="p-4">Loading...</div>
+  if (floorsLoading || desksLoading)
+    return <div className="p-4">Loading...</div>
   if (error) {
     console.error('Desks query error:', error)
-    return <div className="p-4 text-red-500">Error loading desks: {String(error)}</div>
+    return (
+      <div className="p-4 text-red-500">
+        Error loading desks: {String(error)}
+      </div>
+    )
   }
   if (!desks) return <div className="p-4 text-red-500">No desks data</div>
   if (!floors) return <div className="p-4 text-red-500">No floors data</div>
@@ -50,7 +55,8 @@ import { getDesks, getFloors } from '../api'
   const occupancyRate = totalDesks > 0 ? (bookedDesks / totalDesks) * 100 : 0
 
   const floorStats = floors?.map((floor) => {
-    const floorDesks = desks?.filter((d) => d.floorId === floor.id) || []
+    const floorDesks =
+      desks?.filter((d) => String(d.floor_id) === String(floor.id)) || []
     const total = floorDesks.length
     const booked = floorDesks.filter((d) => d.isBooked).length
     const available = total - booked
@@ -124,7 +130,7 @@ import { getDesks, getFloors } from '../api'
           <Calendar
             onChange={(value) => setSelectedDate(value as Date)}
             value={selectedDate}
-            minDate={tomorrow}
+            minDate={today}
           />
           <p className="mt-2">Selected date: {selectedDate.toDateString()}</p>
           {/* Note: Historical data per date not available in current API */}
@@ -145,13 +151,14 @@ import { getDesks, getFloors } from '../api'
               }
               return (
                 <Link
+                  key={stat.id}
                   to="/floor/$floorId"
                   params={{ floorId: stat.id.toString() }}
                   search={{ date: selectedDateString }}
                   className={`block p-4 rounded-lg ${bgColor} text-white shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-bold text-lg">{stat.floorName}</h4>
+                    <h4 className="font-bold text-lg">{stat.floor_name}</h4>
                     <Icon className="h-6 w-6" />
                   </div>
                   <div className="text-sm space-y-2 bg-white/10 rounded-md p-3 backdrop-blur-sm">

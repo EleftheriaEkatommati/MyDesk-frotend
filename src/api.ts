@@ -1,3 +1,11 @@
+export type Booking = {
+  id: number
+  desk_id: string
+  user_id: number
+  booking_date: string
+  status: string
+}
+
 export type Desk = {
   id: string
   floor_id: number
@@ -5,7 +13,7 @@ export type Desk = {
   y: number
   rotation: number
   isBooked: boolean
-  bookedBy: number | null
+  bookedBy: number | string | null
   floor_entity?: Floor
   bookingId?: number
 }
@@ -43,7 +51,14 @@ export async function getFloors(): Promise<Floor[]> {
 export async function getDesks(date: string): Promise<Desk[]> {
   const res = await fetch(`${API_BASE}/desks?date=${date}`)
   if (!res.ok) throw new Error('Failed to fetch desks')
-  return res.json()
+  const data = await res.json()
+  return data.map((d: any) => ({
+    ...d,
+    floor_id: d.floor_id ?? d.floorId ?? null,
+    isBooked: d.isBooked ?? d.is_booked ?? false,
+    bookedBy: d.bookedBy ?? d.booked_by ?? d.user_id ?? null,
+    bookingId: d.bookingId ?? d.booking_id ?? null,
+  }))
 }
 
 // New more specific functions
@@ -103,13 +118,21 @@ export async function getDesksByFloor(
       `Failed to fetch desks for floor ${floorId} on date ${date}`,
     )
   }
-  return res.json()
+
+  const data = await res.json()
+  // Map snake_case to camelCase to ensure the frontend reads the booked states correctly
+  return data.map((d: any) => ({
+    ...d,
+    isBooked: d.isBooked ?? d.is_booked ?? false,
+    bookedBy: d.bookedBy ?? d.booked_by ?? d.user_id ?? null,
+    bookingId: d.bookingId ?? d.booking_id ?? null,
+  }))
 }
 export async function bookDesk(
   deskId: string,
   token: string,
   date: string,
-): Promise<Desk> {
+): Promise<Booking> {
   const res = await fetch(`${API_BASE}/desks/${deskId}/book`, {
     method: 'POST',
     headers: {
@@ -135,5 +158,12 @@ export async function unbookDesk(
     headers: { Authorization: `Bearer ${token}` },
   })
   if (!res.ok) throw new Error(`Failed to cancel booking ${bookingId}`)
-  return res.json()
+
+  const d = await res.json()
+  return {
+    ...d,
+    isBooked: d.isBooked ?? d.is_booked ?? false,
+    bookedBy: d.bookedBy ?? d.booked_by ?? d.user_id ?? null,
+    bookingId: d.bookingId ?? d.booking_id ?? null,
+  }
 }
