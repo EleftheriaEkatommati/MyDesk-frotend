@@ -18,8 +18,10 @@ export const Route = createFileRoute('/floor/$floorId')({
   },
   loader: async ({ params, search }) => {
     const numericFloorId = parseInt(params.floorId)
-    const dateParam = (search as { date?: string })?.date || new Date().toISOString().split('T')[0]
-    
+    const dateParam =
+      (search as { date?: string })?.date ||
+      new Date().toISOString().split('T')[0]
+
     try {
       // Fetch floor and desks in parallel for speed
       const [floor, floorDesks] = await Promise.all([
@@ -45,7 +47,9 @@ function FloorDetail() {
   const [desks, setDesks] = useState<Desk[]>(initialDesks)
   const [loading, setLoading] = useState(false)
 
-  const currentDate = (search as { date?: string })?.date || new Date().toISOString().split('T')[0]
+  const currentDate =
+    (search as { date?: string })?.date ||
+    new Date().toISOString().split('T')[0]
 
   // Refetch desks when the date in search params changes
   useEffect(() => {
@@ -63,10 +67,10 @@ function FloorDetail() {
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">{floor.floorName} Details</h2>
+      <h2 className="text-2xl font-bold mb-4">{floor.floor_name} Details</h2>
 
       <div className="mb-6">
-        <p className="text-lg">Floor Number: {floor.floorNumber}</p>
+        <p className="text-lg">Floor Number: {floor.floor_number}</p>
         <p className="text-lg">Total Desks: {totalDesks}</p>
         <p className="text-lg">Available: {availableDesks}</p>
         <p className="text-lg">Booked: {bookedDesks}</p>
@@ -115,7 +119,7 @@ function FloorPlan({
           ? {
               ...d,
               isBooked: isBooking,
-              bookedBy: isBooking ? parseInt(user.id, 10) : undefined,
+              bookedBy: isBooking ? parseInt(user.id, 10) : null,
             }
           : d,
       ),
@@ -123,9 +127,12 @@ function FloorPlan({
 
     try {
       if (isBooking) {
-        await bookDesk(desk.id, user.id, token,date)
+        await bookDesk(desk.id, token, date)
       } else {
-        await unbookDesk(desk.id, token)
+        if (!desk.bookingId) {
+          throw new Error('Cannot cancel: missing booking ID.')
+        }
+        await unbookDesk(desk.bookingId, token)
       }
       // On success, invalidate to get fresh data from server
       router.invalidate()

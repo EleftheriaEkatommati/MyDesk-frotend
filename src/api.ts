@@ -1,32 +1,33 @@
 export type Desk = {
   id: string
-  floorId: number
+  floor_id: number
   x: number
   y: number
   rotation: number
   isBooked: boolean
-  bookedBy?: number
-  floorName?: string
-  floor?: string
+  bookedBy: number | null
+  floor_entity?: Floor
+  bookingId?: number
 }
 
 export type Floor = {
   id: number
-  floorName: string
-  floorNumber: number
+  floor_name: string
+  floor_number: number
 }
 
 export type User = {
   id: string
   name: string
   email: string
+  surname?: string | null
 }
 
 export type AuthUser = User & {
   token: string
 }
 
-const API_BASE = 'http://localhost:8000/api' // Or your API's base URL
+const API_BASE = 'http://localhost:8000/api/v1' // Or your API's base URL
 
 // A custom error for 404s to be handled in the loader
 export class NotFoundError extends Error {}
@@ -47,13 +48,13 @@ export async function getDesks(date: string): Promise<Desk[]> {
 
 // New more specific functions
 export async function getFloor(floorId: number): Promise<Floor> {
-  // No endpoint for single floor, so fetching all and filtering
-  const floors = await getFloors()
-  const floor = floors.find((f) => f.id === floorId)
-  if (!floor) {
-    throw new NotFoundError(`Floor with id ${floorId} not found`)
+  const res = await fetch(`${API_BASE}/desks/floors/${floorId}`)
+  if (!res.ok) {
+    if (res.status === 404)
+      throw new NotFoundError(`Floor with id ${floorId} not found`)
+    throw new Error('Failed to fetch floor')
   }
-  return floor
+  return res.json()
 }
 
 export async function login(
@@ -75,7 +76,7 @@ export async function login(
 
 export async function getCurrentUser(token: string): Promise<User | null> {
   // Path updated based on user's documentation
-  const res = await fetch(`${API_BASE}/auth/me`, {
+  const res = await fetch(`${API_BASE}/auth/me/profile`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -90,17 +91,22 @@ export async function getCurrentUser(token: string): Promise<User | null> {
   return res.json()
 }
 
-
- export async function getDesksByFloor(floorId: number, date: string): Promise<Desk[]> {
-  const res = await fetch(`${API_BASE}/desks/floor/${floorId}?date=${date}`)
+export async function getDesksByFloor(
+  floorId: number,
+  date: string,
+): Promise<Desk[]> {
+  const res = await fetch(
+    `${API_BASE}/desks/floors/${floorId}/desks?booking_date=${date}`,
+  )
   if (!res.ok) {
-    throw new Error(`Failed to fetch desks for floor ${floorId} on date ${date}`)
+    throw new Error(
+      `Failed to fetch desks for floor ${floorId} on date ${date}`,
+    )
   }
   return res.json()
 }
 export async function bookDesk(
   deskId: string,
-  userId: string,
   token: string,
   date: string,
 ): Promise<Desk> {
@@ -110,9 +116,7 @@ export async function bookDesk(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    // Backend expects user_id as an integer
     body: JSON.stringify({
-      user_id: parseInt(userId, 10),
       booking_date: date,
     }),
   })
@@ -122,12 +126,14 @@ export async function bookDesk(
   return res.json()
 }
 
-export async function unbookDesk(deskId: string, token: string): Promise<Desk> {
-  // Assuming conventional path
-  const res = await fetch(`${API_BASE}/desks/${deskId}/unbook`, {
-    method: 'POST',
+export async function unbookDesk(
+  bookingId: number,
+  token: string,
+): Promise<Desk> {
+  const res = await fetch(`${API_BASE}/bookings/${bookingId}/cancel`, {
+    method: 'PUT',
     headers: { Authorization: `Bearer ${token}` },
   })
-  if (!res.ok) throw new Error(`Failed to unbook desk ${deskId}`)
+  if (!res.ok) throw new Error(`Failed to cancel booking ${bookingId}`)
   return res.json()
 }
