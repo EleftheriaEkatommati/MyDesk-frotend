@@ -40,6 +40,8 @@ function Login() {
       try {
         // Call your actual login API with the string credentials
         await login(email, password)
+        // Invalidate the router to ensure all loaders are re-run with the new auth context
+        await router.invalidate()
 
         if (search.redirect) {
           router.history.push(search.redirect)

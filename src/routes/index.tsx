@@ -3,7 +3,7 @@ import BookingCalendar from '../components/BookingCalendar'
 
 export const Route = createFileRoute('/')({
   beforeLoad: ({ context, location }) => {
-    if (!context.auth.user) {
+    if (!context.auth.isAuthenticated) {
       throw redirect({
         to: '/login',
         search: {

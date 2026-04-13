@@ -25,17 +25,35 @@ export type Floor = {
 }
 
 export type User = {
-  id: string
+  id: number // NOTE: Changed from string as admin/user endpoints return numeric IDs.
   name: string
   email: string
   surname?: string | null
+  role?: Role
 }
 
 export type AuthUser = User & {
   token: string
 }
 
+export type Role = {
+  id: number
+  name: string
+}
+
+export type UserCreate = {
+  email: string
+  password: string
+  name?: string
+  surname?: string
+}
+
+export type RoleUpdate = {
+  role: string
+}
+
 const API_BASE = 'http://localhost:8000/api/v1' // Or your API's base URL
+const ADMIN_API_BASE = `${API_BASE}/admin`
 
 // A custom error for 404s to be handled in the loader
 export class NotFoundError extends Error {}
@@ -166,4 +184,73 @@ export async function unbookDesk(
     bookedBy: d.bookedBy ?? d.booked_by ?? d.user_id ?? null,
     bookingId: d.bookingId ?? d.booking_id ?? null,
   }
+}
+
+// Admin functions
+
+/**
+ * Fetches a list of all users. Requires admin privileges.
+ * @param token The admin user's authentication token.
+ * @returns A promise that resolves to an array of User objects.
+ */
+export async function getUsers(token: string): Promise<User[]> {
+  const res = await fetch(`${ADMIN_API_BASE}/users`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) {
+    throw new Error('Failed to fetch users')
+  }
+  return res.json()
+}
+
+/**
+ * Creates a new user. Requires admin privileges.
+ * @param userData The data for the new user.
+ * @param token The admin user's authentication token.
+ * @returns A promise that resolves to the created User object.
+ */
+export async function createUser(
+  userData: UserCreate,
+  token: string,
+): Promise<User> {
+  const res = await fetch(`${ADMIN_API_BASE}/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(userData),
+  })
+  if (!res.ok) {
+    throw new Error('Failed to create user')
+  }
+  return res.json()
+}
+
+/**
+ * Updates the role of a specific user. Requires admin privileges.
+ * @param userId The ID of the user to update.
+ * @param roleData The new role for the user.
+ * @param token The admin user's authentication token.
+ * @returns A promise that resolves to the updated User object.
+ */
+export async function updateUserRole(
+  userId: number,
+  roleData: RoleUpdate,
+  token: string,
+): Promise<User> {
+  const res = await fetch(`${ADMIN_API_BASE}/users/${userId}/role`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(roleData),
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to update role for user ${userId}`)
+  }
+  return res.json()
 }

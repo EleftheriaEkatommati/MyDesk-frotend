@@ -9,7 +9,7 @@ import { useAuth } from '../auth'
 export const Route = createFileRoute('/the-plan')({
   component: ThePlan,
   beforeLoad: ({ context, location }) => {
-    if (!context.auth.user) {
+    if (!context.auth.isAuthenticated) {
       throw redirect({
         to: '/login',
         search: {
@@ -67,9 +67,7 @@ function ThePlan() {
 
   return (
     <div className="w-full">
-      <h1 className="text-3xl font-extrabold mb-4">
-        Floor {floorId}
-      </h1>
+      <h1 className="text-3xl font-extrabold mb-4">Floor {floorId}</h1>
 
       {/* 📅 CALENDAR */}
       <div className="mb-6">
@@ -77,9 +75,7 @@ function ThePlan() {
           onChange={(value) => setSelectedDate(value as Date)}
           value={selectedDate}
         />
-        <p className="mt-2 font-medium">
-          Selected date: {formattedDate}
-        </p>
+        <p className="mt-2 font-medium">Selected date: {formattedDate}</p>
       </div>
 
       {/* Blueprint */}
@@ -91,10 +87,8 @@ function ThePlan() {
         )}
 
         {desks.map((desk) => {
-          const isBookedByOther =
-            desk.isBooked && desk.bookedBy !== user?.id
-          const isBookedByYou =
-            desk.isBooked && desk.bookedBy === user?.id
+          const isBookedByOther = desk.isBooked && desk.bookedBy !== user?.id
+          const isBookedByYou = desk.isBooked && desk.bookedBy === user?.id
 
           return (
             <div
@@ -113,15 +107,11 @@ function ThePlan() {
                   isBookedByYou
                     ? 'bg-blue-500'
                     : desk.isBooked
-                    ? 'bg-red-500'
-                    : 'bg-green-500'
+                      ? 'bg-red-500'
+                      : 'bg-green-500'
                 } text-white`}
               >
-                {isBookedByYou
-                  ? 'You'
-                  : desk.isBooked
-                  ? 'Booked'
-                  : desk.id}
+                {isBookedByYou ? 'You' : desk.isBooked ? 'Booked' : desk.id}
               </button>
             </div>
           )

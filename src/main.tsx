@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
-import { AuthProvider, authService } from './auth'
+import { AuthProvider, useAuth } from './auth'
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
@@ -12,7 +12,7 @@ import { routeTree } from './routeTree.gen'
 const router = createRouter({
   routeTree,
   context: {
-    auth: authService,
+    auth: undefined!, // This will be set dynamically in the InnerApp component
   },
 })
 
@@ -26,6 +26,12 @@ declare module '@tanstack/react-router' {
 // Create a client
 const queryClient = new QueryClient()
 
+function InnerApp() {
+  const auth = useAuth()
+  // Dynamically provide the auth context to the router
+  return <RouterProvider router={router} context={{ auth }} />
+}
+
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
@@ -34,7 +40,7 @@ if (!rootElement.innerHTML) {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <InnerApp />
         </AuthProvider>
       </QueryClientProvider>
     </StrictMode>,

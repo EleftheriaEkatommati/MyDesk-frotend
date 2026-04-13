@@ -44,7 +44,12 @@ class AuthService {
   async login(username: string, password?: string) {
     // Mock login for testing - bypasses the API
     if (username === 'test@example.com' && password === 'password123') {
-      const mockUser: User = { id: '1', email: username, name: 'Test User' }
+      const mockUser: User = {
+        id: 1,
+        email: username,
+        name: 'Test Admin',
+        role: { id: 1, name: 'admin' },
+      }
       this.user = mockUser
       this.token = 'mock-jwt-token'
       localStorage.setItem('token', 'mock-jwt-token')
@@ -53,8 +58,24 @@ class AuthService {
     }
 
     const authUser: AuthUser = await apiLogin(username, password)
-    const { token, ...user } = authUser
-    this.user = user
+    const { token, ...userFromApi } = authUser
+
+    // Normalize the user object to match the expected User type structure.
+    // This handles cases where the API returns a role or id in an unexpected format.
+    const normalizedUser: User = {
+      ...userFromApi,
+      email: username,
+      id:
+        typeof userFromApi.id === 'string'
+          ? parseInt(userFromApi.id, 10)
+          : userFromApi.id,
+      role:
+        typeof userFromApi.role === 'string'
+          ? { id: userFromApi.role === 'admin' ? 1 : 2, name: userFromApi.role }
+          : userFromApi.role,
+    }
+
+    this.user = normalizedUser
     this.token = token
     localStorage.setItem('token', token)
     this.notify()
@@ -100,8 +121,10 @@ export function useAuth() {
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
+
   return {
     ...context,
+    isAuthenticated: !!context.user,
     login: authService.login.bind(authService),
     logout: authService.logout.bind(authService),
   }
