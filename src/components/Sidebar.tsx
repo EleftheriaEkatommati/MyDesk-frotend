@@ -38,6 +38,15 @@ export function Sidebar() {
         >
           Home
         </Link>
+        {user && (
+          <Link
+            to="/my-bookings"
+            className={linkStyles}
+            activeProps={{ className: activeLinkStyles }}
+          >
+            My Bookings
+          </Link>
+        )}
         <Link
           to="/about"
           className={linkStyles}
@@ -55,21 +64,30 @@ export function Sidebar() {
           </Link>
         )}
       </nav>
-      <div className="p-4 mt-auto border-t border-slate-700 space-y-2">
-        <Link
-          to="/settings"
-          className={linkStyles}
-          activeProps={{ className: activeLinkStyles }}
-        >
-          Settings
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="w-full text-left px-3 py-2 rounded-md text-red-400 hover:bg-red-500/20 hover:text-red-300"
-        >
-          Logout
-        </button>
-      </div>
+      {user && (
+        <div className="p-4 mt-auto border-t border-slate-700 space-y-2">
+          <Link
+            to="/profile"
+            className={linkStyles}
+            activeProps={{ className: activeLinkStyles }}
+          >
+            Profile
+          </Link>
+          <Link
+            to="/settings"
+            className={linkStyles}
+            activeProps={{ className: activeLinkStyles }}
+          >
+            Settings
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="w-full text-left px-3 py-2 rounded-md text-red-400 hover:bg-red-500/20 hover:text-red-300"
+          >
+            Logout
+          </button>
+        </div>
+      )}
     </aside>
   )
 }

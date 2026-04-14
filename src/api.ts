@@ -32,6 +32,22 @@ export type User = {
   role?: Role
 }
 
+export type UserProfileUpdate = {
+  name?: string
+  surname?: string
+}
+
+// New type to match the /login response from the backend
+export type AuthResponse = {
+  id: string
+  name: string
+  role: string
+  token: string
+}
+
+// The AuthUser was problematic as it mixed two different data shapes.
+// The login function will now return the direct AuthResponse.
+// The application logic can then use the token from AuthResponse to fetch the full user profile if needed.
 export type AuthUser = User & {
   token: string
 }
@@ -63,20 +79,33 @@ export async function getFloors(): Promise<Floor[]> {
   // Path updated based on user's documentation
   const res = await fetch(`${API_BASE}/desks/floors`)
   if (!res.ok) throw new Error('Failed to fetch floors')
-  return res.json()
+  const data = await res.json()
+  // Map camelCase from API to snake_case in the frontend type
+  return data.map((f: any) => ({
+    id: f.id,
+    floor_name: f.floorName,
+    floor_number: f.floorNumber,
+  }))
 }
 
 export async function getDesks(date: string): Promise<Desk[]> {
   const res = await fetch(`${API_BASE}/desks?date=${date}`)
   if (!res.ok) throw new Error('Failed to fetch desks')
   const data = await res.json()
-  return data.map((d: any) => ({
-    ...d,
-    floor_id: d.floor_id ?? d.floorId ?? null,
-    isBooked: d.isBooked ?? d.is_booked ?? false,
-    bookedBy: d.bookedBy ?? d.booked_by ?? d.user_id ?? null,
-    bookingId: d.bookingId ?? d.booking_id ?? null,
-  }))
+  // Cleaned up mapping. The backend consistently returns snake_case for these fields.
+  return data.map(
+    (d: any): Desk => ({
+      id: d.id,
+      x: d.x,
+      y: d.y,
+      rotation: d.rotation,
+      floor_id: d.floor_id,
+      floor_entity: d.floor_entity,
+      isBooked: !!(d.is_booked ?? d.isBooked),
+      bookedBy: d.booked_by,
+      bookingId: d.booking_id,
+    }),
+  )
 }
 
 // New more specific functions
@@ -87,22 +116,54 @@ export async function getFloor(floorId: number): Promise<Floor> {
       throw new NotFoundError(`Floor with id ${floorId} not found`)
     throw new Error('Failed to fetch floor')
   }
+  const f = await res.json()
+  // Map camelCase from API to snake_case in the frontend type
+  return {
+    id: f.id,
+    floor_name: f.floorName,
+    floor_number: f.floorNumber,
+  }
+}
+
+/**
+ * Updates the current user's profile.
+ * @param profileData The data to update.
+ * @param token The user's authentication token.
+ * @returns A promise that resolves to the updated User object.
+ */
+// FIXME: This endpoint does not exist on the backend.
+// The backend has a GET /api/v1/auth/me/profile, but no PUT for updates.
+// This function will fail with a 405 Method Not Allowed error.
+export async function updateUserProfile(
+  profileData: UserProfileUpdate,
+  token: string,
+): Promise<User> {
+  const res = await fetch(`${API_BASE}/auth/me/profile`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(profileData),
+  })
+  if (!res.ok) {
+    throw new Error('Failed to update profile')
+  }
   return res.json()
 }
 
 export async function login(
   username: string,
   password?: string,
-): Promise<AuthUser> {
-  // NOTE: In a real app, you'd send the credentials to a server endpoint.
-  // Path updated to a conventional guess based on /api/auth/me
+): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: username, password }),
   })
   if (!res.ok) {
-    throw new Error('Login failed')
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.detail || 'Login failed')
   }
   return res.json()
 }
@@ -138,13 +199,20 @@ export async function getDesksByFloor(
   }
 
   const data = await res.json()
-  // Map snake_case to camelCase to ensure the frontend reads the booked states correctly
-  return data.map((d: any) => ({
-    ...d,
-    isBooked: d.isBooked ?? d.is_booked ?? false,
-    bookedBy: d.bookedBy ?? d.booked_by ?? d.user_id ?? null,
-    bookingId: d.bookingId ?? d.booking_id ?? null,
-  }))
+  // Cleaned up mapping. The backend consistently returns snake_case for these fields.
+  return data.map(
+    (d: any): Desk => ({
+      id: d.id,
+      x: d.x,
+      y: d.y,
+      rotation: d.rotation,
+      floor_id: d.floor_id,
+      floor_entity: d.floor_entity,
+      isBooked: !!(d.is_booked ?? d.isBooked),
+      bookedBy: d.booked_by,
+      bookingId: d.booking_id,
+    }),
+  )
 }
 export async function bookDesk(
   deskId: string,
@@ -170,20 +238,33 @@ export async function bookDesk(
 export async function unbookDesk(
   bookingId: number,
   token: string,
-): Promise<Desk> {
+): Promise<Booking> {
   const res = await fetch(`${API_BASE}/bookings/${bookingId}/cancel`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}` },
   })
   if (!res.ok) throw new Error(`Failed to cancel booking ${bookingId}`)
 
-  const d = await res.json()
-  return {
-    ...d,
-    isBooked: d.isBooked ?? d.is_booked ?? false,
-    bookedBy: d.bookedBy ?? d.booked_by ?? d.user_id ?? null,
-    bookingId: d.bookingId ?? d.booking_id ?? null,
+  // The backend returns a Booking object, which matches the type. No mapping needed.
+  return res.json()
+}
+
+/**
+ * Fetches all bookings for the currently authenticated user.
+ * @param token The user's authentication token.
+ * @returns A promise that resolves to an array of Booking objects.
+ */
+export async function getMyBookings(token: string): Promise<Booking[]> {
+  // Corrected the API path from /auth/me/bookings to /bookings/me
+  const res = await fetch(`${API_BASE}/bookings/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) {
+    throw new Error('Failed to fetch user bookings')
   }
+  return res.json()
 }
 
 // Admin functions

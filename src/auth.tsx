@@ -9,6 +9,7 @@ import {
 import {
   getCurrentUser,
   login as apiLogin,
+  type AuthResponse,
   type AuthUser,
   type User,
 } from './api'
@@ -25,7 +26,7 @@ class AuthService {
     this.loadUser()
   }
 
-  private async loadUser() {
+  async loadUser() {
     if (this.token) {
       try {
         this.user = await getCurrentUser(this.token)
@@ -57,27 +58,21 @@ class AuthService {
       return
     }
 
-    const authUser: AuthUser = await apiLogin(username, password)
-    const { token, ...userFromApi } = authUser
+    // The login API now returns a minimal AuthResponse.
+    const authResponse: AuthResponse = await apiLogin(username, password)
+    this.token = authResponse.token
+    localStorage.setItem('token', this.token)
 
-    // Normalize the user object to match the expected User type structure.
-    // This handles cases where the API returns a role or id in an unexpected format.
-    const normalizedUser: User = {
-      ...userFromApi,
-      email: username,
-      id:
-        typeof userFromApi.id === 'string'
-          ? parseInt(userFromApi.id, 10)
-          : userFromApi.id,
-      role:
-        typeof userFromApi.role === 'string'
-          ? { id: userFromApi.role === 'admin' ? 1 : 2, name: userFromApi.role }
-          : userFromApi.role,
+    // After receiving the token, we fetch the full user profile.
+    // This ensures the user object in our auth context is complete.
+    this.user = await getCurrentUser(this.token)
+
+    if (!this.user) {
+      // If for some reason we can't get the user profile, treat it as a failed login.
+      this.logout() // This will clear the token and user state.
+      throw new Error('Login succeeded, but failed to fetch user profile.')
     }
 
-    this.user = normalizedUser
-    this.token = token
-    localStorage.setItem('token', token)
     this.notify()
   }
 
@@ -127,5 +122,6 @@ export function useAuth() {
     isAuthenticated: !!context.user,
     login: authService.login.bind(authService),
     logout: authService.logout.bind(authService),
+    reloadUser: authService.loadUser.bind(authService),
   }
 }

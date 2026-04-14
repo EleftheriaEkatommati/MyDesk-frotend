@@ -1,6 +1,13 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { getDesksByFloor, getFloor, NotFoundError, type Desk } from '../../api'
-import { useEffect, useState } from 'react'
+import {
+  getDesksByFloor,
+  getFloor,
+  getUsers,
+  NotFoundError,
+  type Desk,
+  type User,
+} from '../../api'
+import { useEffect, useMemo, useState } from 'react'
 import { FloorPlan } from '../../components/FloorPlan'
 
 function getLocalDateString() {
@@ -17,7 +24,8 @@ export const Route = createFileRoute('/floor/$floorId')({
       date: typeof search.date === 'string' ? search.date : undefined,
     }
   },
-  loader: async ({ params, search }) => {
+  loader: async ({ params, search, context }) => {
+    const { auth } = context
     const numericFloorId = parseInt(params.floorId)
     const dateParam =
       (search as { date?: string })?.date || getLocalDateString()
@@ -28,7 +36,23 @@ export const Route = createFileRoute('/floor/$floorId')({
         getFloor(numericFloorId),
         getDesksByFloor(numericFloorId, dateParam),
       ])
-      return { floor, floorDesks, date: dateParam }
+
+      let users: User[] | null = null
+      // If user is admin, fetch all users to display their names on booked desks
+      if (
+        auth.isAuthenticated &&
+        auth.user?.role?.name === 'admin' &&
+        auth.token
+      ) {
+        try {
+          users = await getUsers(auth.token)
+        } catch (userError) {
+          console.error('Failed to fetch users for admin:', userError)
+          // Non-critical, so we can continue without the user list
+        }
+      }
+
+      return { floor, floorDesks, date: dateParam, users }
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw notFound()
@@ -42,7 +66,7 @@ export const Route = createFileRoute('/floor/$floorId')({
 })
 
 function FloorDetail() {
-  const { floor, floorDesks: initialDesks } = Route.useLoaderData()
+  const { floor, floorDesks: initialDesks, users } = Route.useLoaderData()
   const search = Route.useSearch()
   const [desks, setDesks] = useState<Desk[]>(initialDesks)
 
@@ -53,6 +77,12 @@ function FloorDetail() {
   useEffect(() => {
     setDesks(initialDesks)
   }, [initialDesks])
+
+  // Create a map for quick user lookup, only if users data is available
+  const userMap = useMemo(() => {
+    if (!users) return null
+    return new Map(users.map((u) => [u.id, u]))
+  }, [users])
 
   const totalDesks = desks.length
   const bookedDesks = desks.filter((d) => d.isBooked).length
@@ -69,7 +99,12 @@ function FloorDetail() {
         <p className="text-lg">Booked: {bookedDesks}</p>
       </div>
 
-      <FloorPlan desks={desks} setDesks={setDesks} date={currentDate} />
+      <FloorPlan
+        desks={desks}
+        setDesks={setDesks}
+        date={currentDate}
+        userMap={userMap}
+      />
     </div>
   )
 }

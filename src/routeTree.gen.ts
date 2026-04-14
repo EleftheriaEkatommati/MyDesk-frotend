@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ThePlanRouteImport } from './routes/the-plan'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as LogoutRouteImport } from './routes/logout'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -32,6 +34,16 @@ const SettingsRoute = SettingsRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyBookingsRoute = MyBookingsRouteImport.update({
+  id: '/my-bookings',
+  path: '/my-bookings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogoutRoute = LogoutRouteImport.update({
@@ -71,6 +83,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/my-bookings': typeof MyBookingsRoute
+  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/the-plan': typeof ThePlanRoute
@@ -82,6 +96,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/my-bookings': typeof MyBookingsRoute
+  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/the-plan': typeof ThePlanRoute
@@ -94,6 +110,8 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/my-bookings': typeof MyBookingsRoute
+  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/the-plan': typeof ThePlanRoute
@@ -107,6 +125,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/logout'
+    | '/my-bookings'
+    | '/profile'
     | '/register'
     | '/settings'
     | '/the-plan'
@@ -118,6 +138,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/logout'
+    | '/my-bookings'
+    | '/profile'
     | '/register'
     | '/settings'
     | '/the-plan'
@@ -129,6 +151,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/logout'
+    | '/my-bookings'
+    | '/profile'
     | '/register'
     | '/settings'
     | '/the-plan'
@@ -141,6 +165,8 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   LoginRoute: typeof LoginRoute
   LogoutRoute: typeof LogoutRoute
+  MyBookingsRoute: typeof MyBookingsRoute
+  ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRoute
   ThePlanRoute: typeof ThePlanRoute
@@ -168,6 +194,20 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-bookings': {
+      id: '/my-bookings'
+      path: '/my-bookings'
+      fullPath: '/my-bookings'
+      preLoaderRoute: typeof MyBookingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/logout': {
@@ -221,6 +261,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   LoginRoute: LoginRoute,
   LogoutRoute: LogoutRoute,
+  MyBookingsRoute: MyBookingsRoute,
+  ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
   ThePlanRoute: ThePlanRoute,

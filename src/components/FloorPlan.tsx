@@ -1,16 +1,24 @@
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { bookDesk, unbookDesk, type Desk, type Booking } from '../api'
+import {
+  bookDesk,
+  unbookDesk,
+  type Booking,
+  type Desk,
+  type User,
+} from '../api'
 import { useAuth } from '../auth'
 
 export function FloorPlan({
   desks,
   setDesks,
   date,
+  userMap,
 }: {
   desks: Desk[]
   setDesks: React.Dispatch<React.SetStateAction<Desk[]>>
   date: string
+  userMap: Map<number, User> | null
 }) {
   const { user, token } = useAuth()
   const [error, setError] = useState<string | null>(null)
@@ -126,6 +134,23 @@ export function FloorPlan({
           const isBookedByOther = desk.isBooked && !isBookedByYou
           const isDisabled =
             isBookedByOther || (hasBookedADesk && !isBookedByYou)
+
+          let bookingUser: User | undefined
+          if (isBookedByOther && userMap && desk.bookedBy) {
+            bookingUser = userMap.get(Number(desk.bookedBy))
+          }
+
+          const deskLabel = isBookedByYou
+            ? 'You'
+            : isBookedByOther
+              ? bookingUser?.name || 'Booked'
+              : desk.id
+
+          const tooltipText =
+            isBookedByOther && bookingUser
+              ? `${bookingUser.name} ${bookingUser.surname || ''} (${bookingUser.email})`
+              : undefined
+
           return (
             <div
               key={desk.id}
@@ -139,11 +164,15 @@ export function FloorPlan({
               <button
                 onClick={() => handleToggleBooking(desk)}
                 disabled={isDisabled}
-                className={`flex flex-col items-center justify-center outline-none transition-transform duration-200 group-hover:scale-110
-                ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                className={`flex flex-col items-center justify-center outline-none transition-transform duration-200 group-hover:scale-110 ${
+                  isDisabled
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'cursor-pointer'
+                }`}
+                title={tooltipText}
               >
                 <div
-                  className={`w-16 h-10 rounded shadow-md flex items-center justify-center text-sm font-bold border-2
+                  className={`w-16 h-10 rounded shadow-md flex items-center justify-center text-sm font-bold border-2 truncate px-1
                     ${
                       isBookedByYou
                         ? 'bg-blue-200 border-blue-400 text-blue-800 dark:bg-blue-900/60 dark:border-blue-600 dark:text-blue-200'
@@ -152,7 +181,7 @@ export function FloorPlan({
                           : 'bg-emerald-100 border-emerald-400 text-emerald-800 dark:bg-emerald-900/60 dark:border-emerald-600 dark:text-emerald-200'
                     }`}
                 >
-                  {isBookedByYou ? 'You' : isBookedByOther ? `Booked` : desk.id}
+                  {deskLabel}
                 </div>
                 {/* The Desk's Chair */}
                 <div
