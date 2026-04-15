@@ -39,7 +39,7 @@ export type UserProfileUpdate = {
 
 // New type to match the /login response from the backend
 export type AuthResponse = {
-  id: number
+  id: string
   name: string
   role: string
   token: string
@@ -332,6 +332,28 @@ export async function updateUserRole(
   })
   if (!res.ok) {
     throw new Error(`Failed to update role for user ${userId}`)
+  }
+  return res.json()
+}
+
+/**
+ * Registers a new user publicly.
+ * @param userData The data for the new user (name, email, password).
+ * @returns A promise that resolves to an AuthResponse, typically containing a JWT token.
+ */
+export async function registerUser(
+  userData: UserCreate,
+): Promise<AuthResponse> {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData),
+  })
+  if (!res.ok) {
+    // The backend should return a specific error message.
+    // For example, a 409 Conflict with a JSON body like { "detail": "Email already registered" }
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.detail || 'Registration failed')
   }
   return res.json()
 }
