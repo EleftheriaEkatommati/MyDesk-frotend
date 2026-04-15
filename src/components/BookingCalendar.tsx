@@ -18,16 +18,29 @@ const getToday = () => {
 }
 const today = getToday()
 
+const getTomorrow = () => {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return d
+}
+const tomorrow = getTomorrow()
+function formatDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 const BookingCalendar: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(getToday())
+  
+  const [selectedDate, setSelectedDate] = useState<Date>(getTomorrow())
 
   const { data: floors, isLoading: floorsLoading } = useQuery({
     queryKey: ['floors'],
     queryFn: getFloors,
   })
 
-  const selectedDateString = selectedDate.toLocaleDateString('en-CA')
-
+  const selectedDateString = formatDate(selectedDate)
+  console.log('SELECTED DATE STRING:', selectedDateString)  
   // Fetch desks for each floor individually to ensure we can calculate stats correctly.
   const floorDeskQueries = useQueries({
     queries: (floors ?? []).map((floor) => ({
@@ -172,7 +185,7 @@ const BookingCalendar: React.FC = () => {
           <Calendar
             onChange={(value) => setSelectedDate(value as Date)}
             value={selectedDate}
-            minDate={today}
+            minDate={tomorrow}
           />
           <p className="mt-2">Selected date: {selectedDate.toDateString()}</p>
           {/* Note: Historical data per date not available in current API */}
@@ -180,22 +193,22 @@ const BookingCalendar: React.FC = () => {
 
         <div>
           <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
-            Floor Overview for {selectedDate.toLocaleDateString()}
+            Floor Overview for {selectedDate.toISOString().split('T')[0]}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {floorStats?.map((stat) => {
               let bgColor = 'bg-green-500'
               let Icon = CheckCircleIcon
-              if (stat.booked === stat.total) {
+              if (stat.total > 0 && stat.booked === stat.total) {
                 bgColor = 'bg-red-800'
                 Icon = XCircleIcon
-              } else if (stat.booked >= stat.total / 2) {
+              } else if (stat.total > 0 && stat.booked >= stat.total / 2) {
                 bgColor = 'bg-orange-500'
                 Icon = ExclamationTriangleIcon
               }
+              console.log("SELECTED DATE:", selectedDateString)
               return (
                 <Link
-                  key={stat.id}
                   to="/floor/$floorId"
                   params={{ floorId: stat.id.toString() }}
                   search={{ date: selectedDateString }}

@@ -86,7 +86,7 @@ export function FloorPlan({
         }
       }
       // On success, invalidate to get fresh data from server
-      router.invalidate()
+      //router.invalidate()
     } catch (err) {
       // Revert on error
       setDesks(originalDesks)

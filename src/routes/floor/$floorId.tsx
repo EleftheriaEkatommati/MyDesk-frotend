@@ -20,16 +20,22 @@ function getLocalDateString() {
 
 export const Route = createFileRoute('/floor/$floorId')({
   validateSearch: (search: Record<string, unknown>) => {
-    return {
-      date: typeof search.date === 'string' ? search.date : undefined,
-    }
+  return {
+    date:
+      typeof search.date === 'string'
+        ? search.date
+        : getLocalDateString(),
+  }
   },
+  loaderDeps: ({ search }) => ({
+    date: search.date,
+  }),
   loader: async ({ params, search, context }) => {
     const { auth } = context
     const numericFloorId = parseInt(params.floorId)
     const dateParam =
-      (search as { date?: string })?.date || getLocalDateString()
-
+      search?.date ?? getLocalDateString()
+    console.log('LOADER DATE:', dateParam)
     try {
       // Fetch floor and desks in parallel for speed
       const [floor, floorDesks] = await Promise.all([
@@ -65,20 +71,18 @@ export const Route = createFileRoute('/floor/$floorId')({
   notFoundComponent: () => <div className="p-4">Floor not found</div>,
 })
 
-function FloorDetail() {
+function FloorDetailInner() {
   const { floor, floorDesks: initialDesks, users } = Route.useLoaderData()
   const search = Route.useSearch()
+
   const [desks, setDesks] = useState<Desk[]>(initialDesks)
 
   const currentDate =
-    (search as { date?: string })?.date || getLocalDateString()
-
-  // Sync local state with fresh loader data (e.g. after router.invalidate() or date change)
+    search?.date ?? getLocalDateString()
   useEffect(() => {
     setDesks(initialDesks)
   }, [initialDesks])
 
-  // Create a map for quick user lookup, only if users data is available
   const userMap = useMemo(() => {
     if (!users) return null
     return new Map(users.map((u) => [u.id, u]))
@@ -93,10 +97,10 @@ function FloorDetail() {
       <h2 className="text-2xl font-bold mb-4">{floor.floor_name} Details</h2>
 
       <div className="mb-6">
-        <p className="text-lg">Floor Number: {floor.floor_number}</p>
-        <p className="text-lg">Total Desks: {totalDesks}</p>
-        <p className="text-lg">Available: {availableDesks}</p>
-        <p className="text-lg">Booked: {bookedDesks}</p>
+        <p>Floor Number: {floor.floor_number}</p>
+        <p>Total Desks: {totalDesks}</p>
+        <p>Available: {availableDesks}</p>
+        <p>Booked: {bookedDesks}</p>
       </div>
 
       <FloorPlan
@@ -107,4 +111,13 @@ function FloorDetail() {
       />
     </div>
   )
+}
+
+function FloorDetail() {
+  const search = Route.useSearch()
+  const params = Route.useParams()
+
+  const key = `${params.floorId}-${search.date}`
+  console.log('URL DATE:', search.date)
+  return <FloorDetailInner key={key} />
 }

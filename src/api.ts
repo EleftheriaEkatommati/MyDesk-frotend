@@ -39,7 +39,7 @@ export type UserProfileUpdate = {
 
 // New type to match the /login response from the backend
 export type AuthResponse = {
-  id: string
+  id: number
   name: string
   role: string
   token: string
