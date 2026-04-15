@@ -20,6 +20,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FloorFloorIdRouteImport } from './routes/floor/$floorId'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 
 const ThePlanRoute = ThePlanRouteImport.update({
   id: '/the-plan',
@@ -76,6 +77,11 @@ const FloorFloorIdRoute = FloorFloorIdRouteImport.update({
   path: '/floor/$floorId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/the-plan': typeof ThePlanRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/floor/$floorId': typeof FloorFloorIdRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/the-plan': typeof ThePlanRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/floor/$floorId': typeof FloorFloorIdRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/the-plan': typeof ThePlanRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/floor/$floorId': typeof FloorFloorIdRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/settings'
     | '/the-plan'
+    | '/auth/callback'
     | '/floor/$floorId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/settings'
     | '/the-plan'
+    | '/auth/callback'
     | '/floor/$floorId'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/settings'
     | '/the-plan'
+    | '/auth/callback'
     | '/floor/$floorId'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRoute
   ThePlanRoute: typeof ThePlanRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   FloorFloorIdRoute: typeof FloorFloorIdRoute
 }
 
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FloorFloorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
   ThePlanRoute: ThePlanRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   FloorFloorIdRoute: FloorFloorIdRoute,
 }
 export const routeTree = rootRouteImport
