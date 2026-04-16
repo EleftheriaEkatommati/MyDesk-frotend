@@ -32,7 +32,7 @@ function formatDate(date: Date) {
 }
 const BookingCalendar: React.FC = () => {
   
-  const [selectedDate, setSelectedDate] = useState<Date>(getTomorrow())
+  const [selectedDate, setSelectedDate] = useState<Date>(getToday())
 
   const { data: floors, isLoading: floorsLoading } = useQuery({
     queryKey: ['floors'],
@@ -185,7 +185,7 @@ const BookingCalendar: React.FC = () => {
           <Calendar
             onChange={(value) => setSelectedDate(value as Date)}
             value={selectedDate}
-            minDate={tomorrow}
+            minDate={today}
           />
           <p className="mt-2">Selected date: {selectedDate.toDateString()}</p>
           {/* Note: Historical data per date not available in current API */}
@@ -212,6 +212,7 @@ const BookingCalendar: React.FC = () => {
                   to="/floor/$floorId"
                   params={{ floorId: stat.id.toString() }}
                   search={{ date: selectedDateString }}
+                  
                   className={`block p-4 rounded-lg ${bgColor} text-white shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer`}
                 >
                   <div className="flex items-center justify-between mb-2">

@@ -18,24 +18,26 @@ function getLocalDateString() {
   return `${year}-${month}-${day}`
 }
 
+type FloorSearch = {
+  date?: string
+}
+
 export const Route = createFileRoute('/floor/$floorId')({
+  // FIX: This must RETURN the object
   validateSearch: (search: Record<string, unknown>) => {
   return {
-    date:
-      typeof search.date === 'string'
-        ? search.date
-        : getLocalDateString(),
+    // If search.date is missing or not a string, we MUST return something
+    // otherwise Tanstack Router defaults the whole search object to undefined
+    date: (search.date as string) || getLocalDateString(),
   }
   },
-  loaderDeps: ({ search }) => ({
-    date: search.date,
-  }),
   loader: async ({ params, search, context }) => {
     const { auth } = context
     const numericFloorId = parseInt(params.floorId)
     const dateParam =
-      search?.date ?? getLocalDateString()
-    console.log('LOADER DATE:', dateParam)
+      (search as { date?: string } | undefined)?.date ??
+      getLocalDateString()
+    console.log('Date parameter for loader:', dateParam)
     try {
       // Fetch floor and desks in parallel for speed
       const [floor, floorDesks] = await Promise.all([
@@ -71,18 +73,20 @@ export const Route = createFileRoute('/floor/$floorId')({
   notFoundComponent: () => <div className="p-4">Floor not found</div>,
 })
 
-function FloorDetailInner() {
+function FloorDetail() {
   const { floor, floorDesks: initialDesks, users } = Route.useLoaderData()
-  const search = Route.useSearch()
-
+  //const search = Route.useSearch()
+  const search = Route.useSearch({ from: '/floor/$floorId' }) 
+  console.log('Search parameters in component:', search.date) // Debug log to check search parameters
+  const currentDate = search.date || getLocalDateString()
   const [desks, setDesks] = useState<Desk[]>(initialDesks)
-
-  const currentDate =
-    search?.date ?? getLocalDateString()
+  //const currentDate = search.date || getLocalDateString()
+  // Sync local state with fresh loader data (e.g. after router.invalidate() or date change)
   useEffect(() => {
     setDesks(initialDesks)
   }, [initialDesks])
 
+  // Create a map for quick user lookup, only if users data is available
   const userMap = useMemo(() => {
     if (!users) return null
     return new Map(users.map((u) => [u.id, u]))
@@ -97,10 +101,10 @@ function FloorDetailInner() {
       <h2 className="text-2xl font-bold mb-4">{floor.floor_name} Details</h2>
 
       <div className="mb-6">
-        <p>Floor Number: {floor.floor_number}</p>
-        <p>Total Desks: {totalDesks}</p>
-        <p>Available: {availableDesks}</p>
-        <p>Booked: {bookedDesks}</p>
+        <p className="text-lg">Floor Number: {floor.floor_number}</p>
+        <p className="text-lg">Total Desks: {totalDesks}</p>
+        <p className="text-lg">Available: {availableDesks}</p>
+        <p className="text-lg">Booked: {bookedDesks}</p>
       </div>
 
       <FloorPlan
@@ -111,13 +115,4 @@ function FloorDetailInner() {
       />
     </div>
   )
-}
-
-function FloorDetail() {
-  const search = Route.useSearch()
-  const params = Route.useParams()
-
-  const key = `${params.floorId}-${search.date}`
-  console.log('URL DATE:', search.date)
-  return <FloorDetailInner key={key} />
 }
