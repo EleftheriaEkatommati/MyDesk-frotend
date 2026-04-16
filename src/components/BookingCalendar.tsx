@@ -193,7 +193,7 @@ const BookingCalendar: React.FC = () => {
 
         <div>
           <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
-            Floor Overview for {selectedDate.toISOString().split('T')[0]}
+            Floor Overview for {selectedDateString}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {floorStats?.map((stat) => {
@@ -209,10 +209,10 @@ const BookingCalendar: React.FC = () => {
               console.log("SELECTED DATE:", selectedDateString)
               return (
                 <Link
+                  from="/"
                   to="/floor/$floorId"
                   params={{ floorId: stat.id.toString() }}
                   search={{ date: selectedDateString }}
-                  
                   className={`block p-4 rounded-lg ${bgColor} text-white shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer`}
                 >
                   <div className="flex items-center justify-between mb-2">
