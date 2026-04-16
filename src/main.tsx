@@ -4,16 +4,18 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import { AuthProvider, useAuth } from './auth'
-
+import { createBrowserHistory } from '@tanstack/history'
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 
 // Create a new router instance
 const router = createRouter({
   routeTree,
+  history: createBrowserHistory(),
   context: {
     auth: undefined!, // This will be set dynamically in the InnerApp component
   },
+  defaultPreload: 'intent',
 })
 
 // Register the router instance for type safety

@@ -23,21 +23,25 @@ type FloorSearch = {
 }
 
 export const Route = createFileRoute('/floor/$floorId')({
-  // FIX: This must RETURN the object
-  validateSearch: (search: Record<string, unknown>) => {
-  return {
-    // If search.date is missing or not a string, we MUST return something
-    // otherwise Tanstack Router defaults the whole search object to undefined
-    date: (search.date as string) || getLocalDateString(),
-  }
-  },
-  loader: async ({ params, search, context }) => {
+  validateSearch: (search): FloorSearch => ({
+    date:
+      typeof search?.date === 'string'
+        ? search.date
+        : getLocalDateString(),
+  }),
+  loaderDeps: ({ search }) => ({
+    date: search.date,
+    floorId: undefined, // optional but explicit
+  }),
+  loader: async ({ params, deps, context}) => {
     const { auth } = context
     const numericFloorId = parseInt(params.floorId)
-    const dateParam =
-      (search as { date?: string } | undefined)?.date ??
-      getLocalDateString()
+    const dateParam = deps.date ?? getLocalDateString()
     console.log('Date parameter for loader:', dateParam)
+    //console.log("Raw search object:", search) // Debug log to check the raw search object
+    console.log("Mathced route ID:", Route.id) // Debug log to check the matched route ID
+    console.log("Params:", params) // Debug log to check the route parameters
+    //console.log('search in loader:', search)
     try {
       // Fetch floor and desks in parallel for speed
       const [floor, floorDesks] = await Promise.all([
@@ -76,9 +80,9 @@ export const Route = createFileRoute('/floor/$floorId')({
 function FloorDetail() {
   const { floor, floorDesks: initialDesks, users } = Route.useLoaderData()
   //const search = Route.useSearch()
-  const search = Route.useSearch({ from: '/floor/$floorId' }) 
+  const search = Route.useSearch({ from: '/floor/$floorId' })
   console.log('Search parameters in component:', search.date) // Debug log to check search parameters
-  const currentDate = search.date || getLocalDateString()
+  const currentDate = search.date
   const [desks, setDesks] = useState<Desk[]>(initialDesks)
   //const currentDate = search.date || getLocalDateString()
   // Sync local state with fresh loader data (e.g. after router.invalidate() or date change)
