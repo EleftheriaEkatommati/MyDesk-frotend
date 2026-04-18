@@ -8,14 +8,11 @@ import {
   type User,
 } from '../../api'
 import { useEffect, useMemo, useState } from 'react'
-import { FloorPlan } from '../../components/FloorPlan'
+import { FloorRenderer } from '../../components/FloorRenderer'
 
 function getLocalDateString() {
   const d = new Date()
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return d.toISOString().split('T')[0]
 }
 
 type FloorSearch = {
@@ -23,91 +20,71 @@ type FloorSearch = {
 }
 
 export const Route = createFileRoute('/floor/$floorId')({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): FloorSearch => ({
     date:
-      typeof search.date === 'string' && search.date.trim().length > 0
+      typeof search.date === 'string' && search.date.trim()
         ? search.date
         : getLocalDateString(),
   }),
+
   loader: async ({ params, location, context }) => {
     const { auth } = context
-    const numericFloorId = Number(params.floorId)
+    const floorId = Number(params.floorId)
     const search = location.search as FloorSearch | undefined
-    console.log('Floor loader search object:', search)
-    const dateParam = search?.date ?? getLocalDateString()
-    console.log('Date parameter for loader:', dateParam)
+    const date = search?.date ?? getLocalDateString()
+
     try {
-      // Fetch floor and desks in parallel for speed
       const [floor, floorDesks] = await Promise.all([
-        getFloor(numericFloorId),
-        getDesksByFloor(numericFloorId, dateParam),
+        getFloor(floorId),
+        getDesksByFloor(floorId, date),
       ])
 
       let users: User[] | null = null
-      // If user is admin, fetch all users to display their names on booked desks
-      if (
-        auth.isAuthenticated &&
-        auth.user?.role?.name === 'admin' &&
-        auth.token
-      ) {
-        try {
-          users = await getUsers(auth.token)
-        } catch (userError) {
-          console.error('Failed to fetch users for admin:', userError)
-          // Non-critical, so we can continue without the user list
-        }
+
+      if (auth.user?.role?.name === 'admin' && auth.token) {
+        users = await getUsers(auth.token)
       }
 
-      return { floor, floorDesks, date: dateParam, users }
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        throw notFound()
-      }
-      throw error // Re-throw other errors for the error boundary
+      return { floor, floorDesks, users, date }
+    } catch (e) {
+      if (e instanceof NotFoundError) throw notFound()
+      throw e
     }
   },
+
   component: FloorDetail,
-  pendingComponent: () => <div className="p-4">Loading...</div>,
-  notFoundComponent: () => <div className="p-4">Floor not found</div>,
 })
 
 function FloorDetail() {
-  const { floor, floorDesks: initialDesks, users, date } = Route.useLoaderData()
-  console.log('Loader date in component:', date)
-  const currentDate = date || getLocalDateString()
-  const [desks, setDesks] = useState<Desk[]>(initialDesks)
-  // Sync local state with fresh loader data (e.g. after router.invalidate() or date change)
-  useEffect(() => {
-    setDesks(initialDesks)
-  }, [initialDesks])
+  const { floor, floorDesks, users, date } = Route.useLoaderData()
+  const { auth } = Route.useRouteContext()
 
-  // Create a map for quick user lookup, only if users data is available
+  const isAdmin = auth.user?.role?.name === 'admin'
+
+  const [desks, setDesks] = useState<Desk[]>(floorDesks)
+
+  useEffect(() => {
+    setDesks(floorDesks)
+  }, [floorDesks])
+
   const userMap = useMemo(() => {
     if (!users) return null
     return new Map(users.map((u) => [u.id, u]))
   }, [users])
 
-  const totalDesks = desks.length
-  const bookedDesks = desks.filter((d) => d.isBooked).length
-  const availableDesks = totalDesks - bookedDesks
-
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">{floor.floor_name} Details</h2>
+      <h2 className="text-2xl font-bold mb-4">
+        {floor.floor_name}
+      </h2>
 
-      <div className="mb-6">
-        <p className="text-lg">Floor Number: {floor.floor_number}</p>
-        <p className="text-lg">Total Desks: {totalDesks}</p>
-        <p className="text-lg">Available: {availableDesks}</p>
-        <p className="text-lg">Booked: {bookedDesks}</p>
-      </div>
-
-      <FloorPlan
-        desks={desks}
-        setDesks={setDesks}
-        date={currentDate}
-        userMap={userMap}
-      />
+      <FloorRenderer
+          desks={desks}
+          setDesks={setDesks}
+          date={date}
+          floorId={floor.id}
+          userMap={userMap}
+        />
     </div>
   )
 }

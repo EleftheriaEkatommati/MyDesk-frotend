@@ -357,3 +357,75 @@ export async function registerUser(
   }
   return res.json()
 }
+
+
+export async function deleteUser(
+  userId: number,
+  token: string){
+    const res=await fetch(`${ADMIN_API_BASE}/users/${userId}`,{
+      method:'DELETE',
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    })
+    if(!res.ok){
+      throw new Error(`Failed to delete user ${userId}`)
+    }
+  }
+
+  export async function deleteBooking(bookingId: number, token: string) {
+  const res = await fetch(`${ADMIN_API_BASE}/bookings/${bookingId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) {
+    throw new Error('Failed to delete booking')
+  }
+}
+
+export async function createDesk(data: any, token: string) {
+  const res = await fetch(`${ADMIN_API_BASE}/desks`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    throw new Error('Failed to create desk')
+  }
+  return res.json()
+}
+
+export async function deleteDesk(deskId: string, token: string) {
+  const res = await fetch(`${ADMIN_API_BASE}/desks/${deskId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) {
+    throw new Error('Failed to delete desk')
+  }
+}
+
+export async function updateDesk(
+  deskId: string,
+  data: Partial<{ x: number; y: number; rotation: number }>,
+  token: string,
+) {
+  const res = await fetch(`${ADMIN_API_BASE}/desks/${deskId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!res.ok) throw new Error('Failed to update desk')
+  return res.json()
+}

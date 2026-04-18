@@ -2,7 +2,7 @@ import { createFileRoute, redirect, useParams } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-
+import { FloorRenderer } from "../components/FloorRenderer"
 import { bookDesk, getDesksByFloor, type Desk } from '../api'
 import { useAuth } from '../auth'
 
@@ -38,32 +38,6 @@ function ThePlan() {
       .catch(() => setError('Failed to load desks'))
   }, [floorId, formattedDate])
 
-  const handleBook = async (desk: Desk) => {
-    if (!user || !token) return
-
-    const originalDesks = [...desks]
-
-    // optimistic update
-    setDesks((prev) =>
-      prev.map((d) =>
-        d.id === desk.id
-          ? {
-              ...d,
-              isBooked: true,
-              bookedBy: Number(user.id),
-            }
-          : d,
-      ),
-    )
-
-    try {
-      await bookDesk(desk.id, user.id, token, formattedDate)
-    } catch (err) {
-      setDesks(originalDesks)
-      setError((err as Error).message)
-      setTimeout(() => setError(null), 3000)
-    }
-  }
 
   return (
     <div className="w-full">
@@ -79,45 +53,14 @@ function ThePlan() {
       </div>
 
       {/* Blueprint */}
-      <div className="relative w-[800px] h-[600px] border rounded-lg overflow-hidden">
-        {error && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded">
-            {error}
-          </div>
-        )}
-
-        {desks.map((desk) => {
-          const isBookedByOther = desk.isBooked && desk.bookedBy !== user?.id
-          const isBookedByYou = desk.isBooked && desk.bookedBy === user?.id
-
-          return (
-            <div
-              key={desk.id}
-              className="absolute"
-              style={{
-                left: desk.x,
-                top: desk.y,
-                transform: `rotate(${desk.rotation}deg)`,
-              }}
-            >
-              <button
-                onClick={() => handleBook(desk)}
-                disabled={isBookedByOther}
-                className={`p-2 rounded ${
-                  isBookedByYou
-                    ? 'bg-blue-500'
-                    : desk.isBooked
-                      ? 'bg-red-500'
-                      : 'bg-green-500'
-                } text-white`}
-              >
-                {isBookedByYou ? 'You' : desk.isBooked ? 'Booked' : desk.id}
-              </button>
-            </div>
-          )
-        })}
+      <FloorRenderer
+        mode="book"
+        desks={desks}
+        setDesks={setDesks}
+        date={formattedDate}
+        floorId={Number(floorId)}
+      />
       </div>
-    </div>
   )
 }
 

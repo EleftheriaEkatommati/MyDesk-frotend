@@ -3,6 +3,7 @@ import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { FloorRenderer } from "../components/FloorRenderer"
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
