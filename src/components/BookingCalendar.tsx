@@ -3,6 +3,7 @@ import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { FloorRenderer } from "../components/FloorRenderer"
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -32,7 +33,7 @@ function formatDate(date: Date) {
 }
 const BookingCalendar: React.FC = () => {
   
-  const [selectedDate, setSelectedDate] = useState<Date>(getTomorrow())
+  const [selectedDate, setSelectedDate] = useState<Date>(getToday())
 
   const { data: floors, isLoading: floorsLoading } = useQuery({
     queryKey: ['floors'],
@@ -185,7 +186,7 @@ const BookingCalendar: React.FC = () => {
           <Calendar
             onChange={(value) => setSelectedDate(value as Date)}
             value={selectedDate}
-            minDate={tomorrow}
+            minDate={today}
           />
           <p className="mt-2">Selected date: {selectedDate.toDateString()}</p>
           {/* Note: Historical data per date not available in current API */}
@@ -193,7 +194,7 @@ const BookingCalendar: React.FC = () => {
 
         <div>
           <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
-            Floor Overview for {selectedDate.toISOString().split('T')[0]}
+            Floor Overview for {selectedDateString}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {floorStats?.map((stat) => {
@@ -209,6 +210,7 @@ const BookingCalendar: React.FC = () => {
               console.log("SELECTED DATE:", selectedDateString)
               return (
                 <Link
+                  from="/"
                   to="/floor/$floorId"
                   params={{ floorId: stat.id.toString() }}
                   search={{ date: selectedDateString }}
