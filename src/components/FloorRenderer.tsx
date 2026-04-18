@@ -82,8 +82,12 @@ export function FloorRenderer({
   const handleFloorClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isAdmin || !floorId) return
 
-    const target = e.target as HTMLElement
+    if (didDrag) {
+      setDidDrag(false)
+      return
+    }
 
+    const target = e.target as HTMLElement
     if (target.closest(".group")) return
 
     const rect = e.currentTarget.getBoundingClientRect()
@@ -159,11 +163,10 @@ export function FloorRenderer({
     const snappedX = snap(rawX)
     const snappedY = snap(rawY)
 
-    // 🔹 hover preview (only if admin and not dragging)
+    // Hover preview
     if (isAdmin && !draggingId) {
       const target = e.target as HTMLElement
 
-      // hide preview when hovering desks
       if (target.closest(".group")) {
         setHoverCell(null)
       } else {
@@ -171,10 +174,18 @@ export function FloorRenderer({
       }
     }
 
-    // 🔹 dragging logic (unchanged)
+    // 🔥 DRAGGING FIX
     if (!isAdmin || !draggingId) return
 
-    setDragPos({ x: rawX, y: rawY })
+    setDidDrag(true)
+
+    setDesks((prev) =>
+      prev.map((d) =>
+        d.id === draggingId
+          ? { ...d, x: rawX, y: rawY }
+          : d
+      )
+    )
   }
   const snap = (n: number) => Math.round(n / 20) * 20
 
@@ -187,7 +198,6 @@ export function FloorRenderer({
     const snappedX = snap(desk.x)
     const snappedY = snap(desk.y)
 
-    
     if (isColliding(desk.id, snappedX, snappedY, desks)) {
       setDesks((p) =>
         p.map((d) =>
@@ -196,29 +206,23 @@ export function FloorRenderer({
             : d
         )
       )
-
-      setDraggingId(null)
-      setDragPos(null)
-      setDragStart(null)
-      return
-    }
-
-    setDesks((p) =>
-      p.map((d) =>
-        d.id === draggingId
-          ? { ...d, x: snappedX, y: snappedY }
-          : d
+    } else {
+      setDesks((p) =>
+        p.map((d) =>
+          d.id === draggingId
+            ? { ...d, x: snappedX, y: snappedY }
+            : d
+        )
       )
-    )
+
+      try {
+        await updateDesk(desk.id, { x: snappedX, y: snappedY }, token)
+      } catch {}
+    }
 
     setDraggingId(null)
     setDragPos(null)
-
-    try {
-      await updateDesk(desk.id, { x: snappedX, y: snappedY }, token)
-    } catch {
-      // optional rollback
-    }
+    setDragStart(null)
   }
   
   // ================== RENDER ==================
@@ -253,7 +257,9 @@ export function FloorRenderer({
           return (
             <div
               key={desk.id}
-              className="absolute group z-10"
+              className={`absolute group z-10 ${
+                isAdmin ? "cursor-grab active:cursor-grabbing" : ""
+              }`}
               style={{
                 left: desk.x,
                 top: desk.y,
