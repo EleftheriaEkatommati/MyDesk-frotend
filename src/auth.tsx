@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react'
 import {
@@ -21,19 +22,27 @@ class AuthService {
   private token: string | null = localStorage.getItem('token')
   private user: User | null = null
   private subscribers: Set<(state: AuthState) => void> = new Set()
+  private initialLoadPromise: Promise<void>
 
   constructor() {
-    this.loadUser()
+    this.initialLoadPromise = this.loadUser()
   }
 
-  async loadUser() {
+  loadUser = async () => {
+    // Always sync token from localStorage before trying to load user
+    this.token = localStorage.getItem('token')
+
     if (this.token) {
       try {
         this.user = await getCurrentUser(this.token)
       } catch {
         this.token = null
+        this.user = null
         localStorage.removeItem('token')
       }
+    } else {
+      // If there's no token, ensure user is also null
+      this.user = null
     }
     this.notify()
   }
@@ -42,7 +51,7 @@ class AuthService {
     return { user: this.user, token: this.token }
   }
 
-  async login(username: string, password?: string) {
+  login = async (username: string, password?: string) => {
     // Mock login for testing - bypasses the API
     if (username === 'test@example.com' && password === 'password123') {
       const mockUser: User = {
@@ -76,11 +85,15 @@ class AuthService {
     this.notify()
   }
 
-  logout() {
+  logout = () => {
     this.user = null
     this.token = null
     localStorage.removeItem('token')
     this.notify()
+  }
+
+  ensureLoaded = async () => {
+    await this.initialLoadPromise
   }
 
   subscribe(callback: (state: AuthState) => void) {
@@ -117,11 +130,17 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
 
-  return {
-    ...context,
-    isAuthenticated: !!context.user,
-    login: authService.login.bind(authService),
-    logout: authService.logout.bind(authService),
-    reloadUser: authService.loadUser.bind(authService),
-  }
+  // Use useMemo to stabilize the returned object, preventing unnecessary re-renders.
+  // The methods from authService are now stable because they are defined as arrow functions.
+  return useMemo(
+    () => ({
+      ...context,
+      isAuthenticated: !!context.user,
+      login: authService.login,
+      logout: authService.logout,
+      reloadUser: authService.loadUser,
+      ensureLoaded: authService.ensureLoaded,
+    }),
+    [context],
+  )
 }

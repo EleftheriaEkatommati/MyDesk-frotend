@@ -4,16 +4,17 @@ import {
   useLoaderData,
   useRouter,
 } from '@tanstack/react-router'
-import { getMyBookings, unbookDesk, type Booking } from '../api'
-import { useAuth } from '../auth'
+import { getMyBookings, type Booking } from '../api'
+import { authService, useAuth } from '../auth'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/my-bookings')({
   loader: async ({ context }) => {
-    const { auth } = context
+    await context.auth.ensureLoaded()
+    const authState = authService.getState()
 
     // If user is not authenticated, redirect to login
-    if (!auth.isAuthenticated || !auth.token) {
+    if (!authState.user || !authState.token) {
       throw redirect({
         to: '/login',
         search: {
@@ -23,7 +24,7 @@ export const Route = createFileRoute('/my-bookings')({
     }
 
     // Fetch the user's bookings
-    const bookings = await getMyBookings(auth.token)
+    const bookings = await getMyBookings(authState.token)
     return { bookings }
   },
   component: MyBookingsPage,

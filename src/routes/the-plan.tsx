@@ -4,12 +4,13 @@ import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 
 import { bookDesk, getDesksByFloor, type Desk } from '../api'
-import { useAuth } from '../auth'
+import { authService, useAuth } from '../auth'
 
 export const Route = createFileRoute('/the-plan')({
   component: ThePlan,
-  beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated) {
+  beforeLoad: async ({ context, location }) => {
+    await context.auth.ensureLoaded()
+    if (!authService.getState().user) {
       throw redirect({
         to: '/login',
         search: {

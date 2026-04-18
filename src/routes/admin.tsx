@@ -7,13 +7,15 @@ import {
 } from '@tanstack/react-router'
 import React, { useState } from 'react'
 import { createUser, getUsers, updateUserRole, type User } from '../api'
+import { authService } from '../auth'
 
 export const Route = createFileRoute('/admin')({
   // 1. Loader για τη λήψη δεδομένων και την προστασία της διαδρομής
   loader: async ({ context }) => {
-    const { auth } = context
+    await context.auth.ensureLoaded()
+    const authState = authService.getState()
     // Ανακατεύθυνση εάν ο χρήστης δεν είναι συνδεδεμένος ή δεν είναι διαχειριστής
-    if (!auth.isAuthenticated || auth.user?.role?.name !== 'admin') {
+    if (!authState.user || authState.user?.role?.name !== 'admin') {
       throw redirect({
         to: '/login',
         search: {
@@ -23,7 +25,7 @@ export const Route = createFileRoute('/admin')({
       })
     }
     // Λήψη χρηστών εάν υπάρχει εξουσιοδότηση
-    const users = await getUsers(auth.token!)
+    const users = await getUsers(authState.token!)
     return { users }
   },
   // 2. Component για την απόδοση της σελίδας

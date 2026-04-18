@@ -7,14 +7,16 @@ import {
 } from '@tanstack/react-router'
 import React, { useState } from 'react'
 import { type User, updateUserProfile } from '../api'
+import { authService } from '../auth'
 
 export const Route = createFileRoute('/profile')({
   // 1. Loader to fetch user data and protect the route
   loader: async ({ context }) => {
-    const { auth } = context
+    await context.auth.ensureLoaded()
+    const authState = authService.getState()
 
     // If user is not authenticated, redirect to login
-    if (!auth.isAuthenticated || !auth.user) {
+    if (!authState.user) {
       throw redirect({
         to: '/login',
         search: {
@@ -26,7 +28,7 @@ export const Route = createFileRoute('/profile')({
 
     // The user object is already available in the auth context
     // so we can just return it.
-    return { user: auth.user }
+    return { user: authState.user }
   },
   // 2. Component to render the page
   component: ProfilePage,
