@@ -3,12 +3,15 @@ import {
   getDesksByFloor,
   getFloor,
   getUsers,
+  getMyBookings,
   NotFoundError,
   type Desk,
   type User,
 } from '../../api'
 import { useEffect, useMemo, useState } from 'react'
 import { FloorRenderer } from '../../components/FloorRenderer'
+import { useQuery } from '@tanstack/react-query'
+import { BookingConfirmationCard } from '../../components/BookingConfirmationCard'
 
 function getLocalDateString() {
   const d = new Date()
@@ -61,6 +64,13 @@ function FloorDetail() {
 
   const isAdmin = auth.user?.role?.name === 'admin'
 
+  const { data: myBookingResult } = useQuery({
+    queryKey: ['myBooking', date],
+    queryFn: () => getMyBookings(auth.token!, date),
+    enabled: !!auth.token,
+  })
+  const myBooking = myBookingResult?.[0]
+
   const [desks, setDesks] = useState<Desk[]>(floorDesks)
 
   useEffect(() => {
@@ -77,6 +87,11 @@ function FloorDetail() {
       <h2 className="text-2xl font-bold mb-4">
         {floor.floor_name}
       </h2>
+
+      {/* --- Booking Confirmation Card --- */}
+      {myBooking && (
+        <BookingConfirmationCard booking={myBooking} />
+      )}
 
       <FloorRenderer
           desks={desks}

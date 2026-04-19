@@ -4,7 +4,7 @@ import {
   useLoaderData,
   useRouter,
 } from '@tanstack/react-router'
-import { getMyBookings, type Booking } from '../api'
+import { getMyBookings, unbookDesk, type Booking } from '../api'
 import { authService, useAuth } from '../auth'
 import { useState } from 'react'
 
@@ -120,6 +120,22 @@ function BookingCard({ booking }: { booking: Booking }) {
           Booking ID: {booking.id}
         </p>
       </div>
+      {canCancel && (
+        <div className="p-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-200 dark:border-slate-700">
+          <button
+            onClick={handleCancel}
+            disabled={isCancelling}
+            className="w-full px-4 py-2 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
+          </button>
+        </div>
+      )}
+      {error && (
+        <div className="p-2 text-sm text-center text-red-500 bg-red-100/10">
+          {error}
+        </div>
+      )}
     </div>
   )
 }

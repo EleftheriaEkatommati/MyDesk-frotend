@@ -1,20 +1,23 @@
 export type Booking = {
   id: number
-  desk_id: string
+  desk_id: number
   user_id: number
   booking_date: string
   status: string
+  // Backend now includes the full desk and user objects for convenience
+  desk?: Desk
+  user?: User
 }
 
 export type Desk = {
-  id: string
-  floor_id: number
+  id: number
+  floorId: number
   x: number
   y: number
   rotation: number
   isBooked: boolean
-  bookedBy: number | string | null
-  floor_entity?: Floor
+  bookedBy: number | null
+  floor?: Floor
   bookingId?: number
 }
 
@@ -35,6 +38,13 @@ export type User = {
 export type UserProfileUpdate = {
   name?: string
   surname?: string
+}
+
+export type DeskCreatePayload = {
+  x: number
+  y: number
+  rotation: number
+  floorId: number
 }
 
 // New type to match the /login response from the backend
@@ -99,11 +109,11 @@ export async function getDesks(date: string): Promise<Desk[]> {
       x: d.x,
       y: d.y,
       rotation: d.rotation,
-      floor_id: d.floor_id,
-      floor_entity: d.floor_entity,
-      isBooked: !!(d.is_booked ?? d.isBooked),
-      bookedBy: d.booked_by,
-      bookingId: d.booking_id,
+      floorId: d.floorId,
+      floor: d.floor,
+      isBooked: d.isBooked,
+      bookedBy: d.bookedBy,
+      bookingId: d.bookingId,
     }),
   )
 }
@@ -206,16 +216,16 @@ export async function getDesksByFloor(
       x: d.x,
       y: d.y,
       rotation: d.rotation,
-      floor_id: d.floor_id,
-      floor_entity: d.floor_entity,
-      isBooked: !!(d.is_booked ?? d.isBooked),
-      bookedBy: d.booked_by,
-      bookingId: d.booking_id,
+      floorId: d.floorId,
+      floor: d.floor,
+      isBooked: d.isBooked,
+      bookedBy: d.bookedBy,
+      bookingId: d.bookingId,
     }),
   )
 }
 export async function bookDesk(
-  deskId: string,
+  deskId: number,
   token: string,
   date: string,
 ): Promise<Booking> {
@@ -254,9 +264,14 @@ export async function unbookDesk(
  * @param token The user's authentication token.
  * @returns A promise that resolves to an array of Booking objects.
  */
-export async function getMyBookings(token: string): Promise<Booking[]> {
-  // Corrected the API path from /auth/me/bookings to /bookings/me
-  const res = await fetch(`${API_BASE}/bookings/me`, {
+export async function getMyBookings(
+  token: string,
+  date?: string,
+): Promise<Booking[]> {
+  const url = new URL(`${API_BASE}/bookings/me`)
+  if (date) url.searchParams.append('date', date)
+
+  const res = await fetch(url.toString(), {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -358,22 +373,19 @@ export async function registerUser(
   return res.json()
 }
 
-
-export async function deleteUser(
-  userId: number,
-  token: string){
-    const res=await fetch(`${ADMIN_API_BASE}/users/${userId}`,{
-      method:'DELETE',
-      headers:{
-        Authorization:`Bearer ${token}`
-      }
-    })
-    if(!res.ok){
-      throw new Error(`Failed to delete user ${userId}`)
-    }
+export async function deleteUser(userId: number, token: string) {
+  const res = await fetch(`${ADMIN_API_BASE}/users/${userId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to delete user ${userId}`)
   }
+}
 
-  export async function deleteBooking(bookingId: number, token: string) {
+export async function deleteBooking(bookingId: number, token: string) {
   const res = await fetch(`${ADMIN_API_BASE}/bookings/${bookingId}`, {
     method: 'DELETE',
     headers: {
@@ -385,22 +397,25 @@ export async function deleteUser(
   }
 }
 
-export async function createDesk(data: any, token: string) {
+export async function createDesk(
+  data: DeskCreatePayload,
+  token: string,
+): Promise<Desk> {
   const res = await fetch(`${ADMIN_API_BASE}/desks`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(data), // The payload must not include an id.
   })
   if (!res.ok) {
     throw new Error('Failed to create desk')
   }
-  return res.json()
+  return res.json() as Promise<Desk>
 }
 
-export async function deleteDesk(deskId: string, token: string) {
+export async function deleteDesk(deskId: number, token: string) {
   const res = await fetch(`${ADMIN_API_BASE}/desks/${deskId}`, {
     method: 'DELETE',
     headers: {
@@ -413,7 +428,7 @@ export async function deleteDesk(deskId: string, token: string) {
 }
 
 export async function updateDesk(
-  deskId: string,
+  deskId: number,
   data: Partial<{ x: number; y: number; rotation: number }>,
   token: string,
 ) {

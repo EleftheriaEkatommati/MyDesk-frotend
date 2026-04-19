@@ -3,7 +3,7 @@ import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { FloorRenderer } from "../components/FloorRenderer"
+import { BookingConfirmationCard } from './BookingConfirmationCard'
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -12,7 +12,8 @@ import {
   CheckIcon,
   UserIcon,
 } from '@heroicons/react/24/solid'
-import { getDesksByFloor, getFloors } from '../api'
+import { getDesksByFloor, getFloors, getMyBookings } from '../api'
+import { useAuth } from '../auth'
 const getToday = () => {
   const d = new Date()
   return d
@@ -32,7 +33,7 @@ function formatDate(date: Date) {
   return `${year}-${month}-${day}`
 }
 const BookingCalendar: React.FC = () => {
-  
+  const { token } = useAuth()
   const [selectedDate, setSelectedDate] = useState<Date>(getToday())
 
   const { data: floors, isLoading: floorsLoading } = useQuery({
@@ -41,7 +42,14 @@ const BookingCalendar: React.FC = () => {
   })
 
   const selectedDateString = formatDate(selectedDate)
-  console.log('SELECTED DATE STRING:', selectedDateString)  
+
+  const { data: myBookingResult } = useQuery({
+    queryKey: ['myBooking', selectedDateString],
+    queryFn: () => getMyBookings(token!, selectedDateString),
+    enabled: !!token,
+  })
+  const myBooking = myBookingResult?.[0]
+
   // Fetch desks for each floor individually to ensure we can calculate stats correctly.
   const floorDeskQueries = useQueries({
     queries: (floors ?? []).map((floor) => ({
@@ -88,6 +96,9 @@ const BookingCalendar: React.FC = () => {
       <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-slate-200">
         Availability and Booking Calendar
       </h2>
+
+      {/* --- Booking Confirmation Card --- */}
+      {myBooking && <BookingConfirmationCard booking={myBooking} />}
 
       <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
         <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow">
@@ -207,7 +218,7 @@ const BookingCalendar: React.FC = () => {
                 bgColor = 'bg-orange-500'
                 Icon = ExclamationTriangleIcon
               }
-              console.log("SELECTED DATE:", selectedDateString)
+              console.log('SELECTED DATE:', selectedDateString)
               return (
                 <Link
                   from="/"
