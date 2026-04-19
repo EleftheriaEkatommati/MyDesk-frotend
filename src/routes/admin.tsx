@@ -35,7 +35,8 @@ export const Route = createFileRoute('/admin')({
 
 function AdminPage() {
   // 3. Λήψη δεδομένων χρηστών από το loader
-  const { users } = useLoaderData({ from: '/admin' })
+  const loaderData = useLoaderData({ from: '/admin' })
+  const [users, setUsers] = useState(loaderData.users)
 
   return (
     <div className="p-4 md:p-8">
@@ -62,7 +63,12 @@ function AdminPage() {
             </thead>
             <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
               {users.map((user) => (
-                <UserRow key={user.id} user={user} />
+                <UserRow
+                  key={user.id}
+                  user={user}
+                  users={users}
+                  setUsers={setUsers}
+                />
               ))}
             </tbody>
           </table>
@@ -73,9 +79,18 @@ function AdminPage() {
 }
 
 // Component για μια σειρά χρήστη με λειτουργικότητα ενημέρωσης ρόλου
-function UserRow({ user }: { user: User }) {
+function UserRow({
+  user,
+  users,
+  setUsers,
+}: {
+  user: User
+  users: User[]
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>
+}) {
   const { auth } = useRouteContext({ from: '__root__' })
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
 
   const handleRoleChange = async (newRole: 'admin' | 'user') => {
     if (!auth.token || !auth.user) return
@@ -85,28 +100,46 @@ function UserRow({ user }: { user: User }) {
       return
     }
 
-    try {
-      await updateUserRole(
-        user.id,
-        { role: newRole },
-        auth.token,
+    const prevUsers = [...users]
+    setLoading(true)
+
+    setUsers((p) =>
+      p.map((u) =>
+        u.id === user.id
+          ? {
+              ...u,
+              role: {
+                id: u.role?.id ?? 0, // fallback to something valid
+                name: newRole,
+              },
+            }
+          : u
       )
-      navigate({ to: '/admin' })
+    )
+
+    try {
+      await updateUserRole(user.id, { role: newRole }, auth.token)
     } catch (error) {
-      console.error('Failed to update role:', error)
+      console.error(error)
+      setUsers(prevUsers)
+    } finally {
+      setLoading(false)
     }
   }
 
   const handleDelete = async () => {
     if (!auth.token) return
-
     if (!confirm('Delete this user?')) return
+
+    const prevUsers = [...users]
+
+    setUsers((p) => p.filter((u) => u.id !== user.id))
 
     try {
       await deleteUser(user.id, auth.token)
-      navigate({ to: '/admin' })
     } catch (error) {
-      console.error('Failed to delete user:', error)
+      console.error(error)
+      setUsers(prevUsers)
     }
   }
 
