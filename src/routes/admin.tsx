@@ -7,11 +7,8 @@ import {
 } from '@tanstack/react-router'
 import React, { useState } from 'react'
 import { createUser, getUsers, updateUserRole, type User } from '../api'
-<<<<<<< HEAD
 import { authService } from '../auth'
-=======
 import { deleteUser } from '../api'
->>>>>>> a2da356997eaa3c93052f8d21a79817fbf89108d
 
 export const Route = createFileRoute('/admin')({
   // 1. Loader για τη λήψη δεδομένων και την προστασία της διαδρομής
