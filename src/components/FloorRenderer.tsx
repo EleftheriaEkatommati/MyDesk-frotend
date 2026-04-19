@@ -9,7 +9,9 @@ import {
 import type { Desk, User } from '../api'
 import { FLOOR_CONTAINER } from '../floorTheme'
 import { useState } from 'react'
-
+import { useEffect } from 'react'
+import type { Booking } from '../api'
+import { deleteBooking } from '../api'
 type Mode = 'view' | 'book' | 'admin'
 
 type Props = {
@@ -42,6 +44,24 @@ export function FloorRenderer({
   const canBook = !!user
   const DESK_W = 64
   const DESK_H = 40
+  
+  //Booking state for UI updates
+  const [bookings, setBookings] = useState<Booking[]>([])
+
+  const extractBookings = (desks: Desk[], date: string): Booking[] => {
+    return desks
+      .filter((d) => d.bookingId)
+      .map((d) => ({
+        id: d.bookingId!,
+        desk_id: d.id,
+        user_id: Number(d.bookedBy),
+        booking_date: date,
+        status: "active",
+      }))
+  }
+  useEffect(() => {
+    setBookings(extractBookings(desks, date))
+  }, [desks, date])
 
   // ---------------- COLLISION ----------------
   const isColliding = (id: number, x: number, y: number, desks: Desk[]) => {
@@ -61,7 +81,6 @@ export function FloorRenderer({
     if (!canBook || !user || !token) return
 
     const isBookedByOther = desk.isBooked && desk.bookedBy !== Number(user.id)
-
     if (isBookedByOther) return
 
     const prev = [...desks]
@@ -70,15 +89,15 @@ export function FloorRenderer({
       p.map((d) =>
         d.id === desk.id
           ? { ...d, isBooked: true, bookedBy: Number(user.id) }
-          : d,
-      ),
+          : d
+      )
     )
 
     try {
       await bookDesk(desk.id, token, date)
     } catch {
       setDesks(prev)
-      alert('Booking failed')
+      alert("Booking failed")
     }
   }
 
@@ -134,16 +153,25 @@ export function FloorRenderer({
   }
 
   // ---------------- DELETE ----------------
-  const handleDelete = async (id: number) => {
-    if (!isAdmin || !token) return
+  const handleDeleteBooking = async (bookingId: number) => {
+    if (!token) return
+    if (!confirm("Delete this booking?")) return
 
-    const backup = desks
-    setDesks((p) => p.filter((d) => d.id !== id))
+    const prev = [...desks]
+
+    // optimistic update
+    setDesks((p) =>
+      p.map((d) =>
+        d.bookingId === bookingId
+          ? { ...d, isBooked: false, bookedBy: null, bookingId: undefined }
+          : d
+      )
+    )
 
     try {
-      await deleteDesk(id, token)
+      await deleteBooking(bookingId, token)
     } catch {
-      setDesks(backup)
+      setDesks(prev)
     }
   }
 
@@ -387,6 +415,42 @@ export function FloorRenderer({
           </span>
         </div>
       </div>
+      {isAdmin && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Bookings</h2>
+
+          <table className="min-w-full bg-white dark:bg-slate-800 rounded-lg overflow-hidden">
+            <thead>
+              <tr className="border-b">
+                <th className="px-4 py-2 text-left">Booking ID</th>
+                <th className="px-4 py-2 text-left">Desk</th>
+                <th className="px-4 py-2 text-left">User</th>
+                <th className="px-4 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {bookings.map((b) => (
+                <tr key={b.id} className="border-b">
+                  <td className="px-4 py-2">{b.id}</td>
+                  <td className="px-4 py-2">{b.desk_id}</td>
+                  <td className="px-4 py-2">
+                    {userMap?.get(b.user_id)?.name ?? b.user_id}
+                  </td>
+                  <td className="px-4 py-2">
+                    <button
+                      onClick={() => handleDeleteBooking(b.id)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+)}
     </>
   )
 }
