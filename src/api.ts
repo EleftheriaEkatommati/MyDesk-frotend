@@ -240,7 +240,8 @@ export async function bookDesk(
     }),
   })
   if (!res.ok) {
-    throw new Error(`Failed to book desk ${deskId}`)
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.detail || `Failed to book desk ${deskId}`)
   }
   return res.json()
 }

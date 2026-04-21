@@ -7,6 +7,7 @@ import {
 import { getMyBookings, unbookDesk, type Booking } from '../api'
 import { authService, useAuth } from '../auth'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/my-bookings')({
   loader: async ({ context }) => {
@@ -59,8 +60,9 @@ function BookingCard({ booking }: { booking: Booking }) {
   const { token } = useAuth()
   const router = useRouter()
   const [isCancelling, setIsCancelling] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const statusStyles: Record<string, string> = {
+    active:
+      'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     confirmed:
       'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
@@ -71,28 +73,36 @@ function BookingCard({ booking }: { booking: Booking }) {
 
   const handleCancel = async () => {
     if (!token) return
+
+    if (!window.confirm('Are you sure you want to cancel this booking?')) {
+      return
+    }
+
     setIsCancelling(true)
-    setError(null)
     try {
       await unbookDesk(booking.id, token)
+      toast.success('Booking cancelled successfully!')
       // Invalidate the data for this route to refetch bookings
       router.invalidate()
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Failed to cancel booking.'
-      setError(message)
-      // Clear the error after a few seconds
-      setTimeout(() => setError(null), 4000)
+      toast.error(message)
     } finally {
       setIsCancelling(false)
     }
   }
 
-  // A booking can be cancelled if it is 'confirmed' and is for today or a future date.
+  // A booking can be cancelled if it is 'confirmed' or 'active' and is for today or a future date.
   // Using string comparison for 'YYYY-MM-DD' format is safe and avoids timezone issues.
-  const todayStr = new Date().toLocaleDateString('en-CA')
+  const today = new Date()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  const todayStr = `${yyyy}-${mm}-${dd}`
   const canCancel =
-    booking.status === 'confirmed' && booking.booking_date >= todayStr
+    (booking.status === 'confirmed' || booking.status === 'active') &&
+    booking.booking_date >= todayStr
 
   return (
     <div className="bg-white dark:bg-slate-800 shadow-lg rounded-xl overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 flex flex-col">
@@ -129,11 +139,6 @@ function BookingCard({ booking }: { booking: Booking }) {
           >
             {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
           </button>
-        </div>
-      )}
-      {error && (
-        <div className="p-2 text-sm text-center text-red-500 bg-red-100/10">
-          {error}
         </div>
       )}
     </div>

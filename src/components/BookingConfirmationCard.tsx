@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../auth'
+import toast from 'react-hot-toast'
 import { unbookDesk, type Booking } from '../api'
 import {
   CalendarDaysIcon,
@@ -11,29 +13,50 @@ import {
 export function BookingConfirmationCard({ booking }: { booking: Booking }) {
   const { token } = useAuth()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [isCancelling, setIsCancelling] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleCancel = async () => {
     if (!token) return
+    if (!window.confirm('Are you sure you want to cancel this booking?')) {
+      return
+    }
+
     setIsCancelling(true)
-    setError(null)
+
+    // Optimistically update the UI by removing the booking from the query cache.
+    // This makes the card disappear instantly.
+    queryClient.setQueryData(['myBooking', booking.booking_date], [])
+
     try {
       await unbookDesk(booking.id, token)
-      // Invalidate router to refetch all data and remove this card
+      toast.success('Booking cancelled successfully!')
+      // Invalidate all data to ensure consistency after the optimistic update.
+      // This will correctly update the desk status on the floor plan and stats on the homepage.
       router.invalidate()
     } catch (err) {
+      // On error, revert the optimistic update by refetching the original data.
+      queryClient.invalidateQueries({
+        queryKey: ['myBooking', booking.booking_date],
+      })
       const message =
         err instanceof Error ? err.message : 'Failed to cancel booking.'
-      setError(message)
-      setTimeout(() => setError(null), 4000)
+      toast.error(message)
     } finally {
       setIsCancelling(false)
     }
   }
 
-  // A booking can be cancelled if it is 'confirmed'.
-  const canCancel = booking.status === 'confirmed'
+  // A booking can be cancelled if it is 'confirmed' or 'active' and is for today or a future date.
+  // Using string comparison for 'YYYY-MM-DD' format is safe and avoids timezone issues.
+  const today = new Date()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  const todayStr = `${yyyy}-${mm}-${dd}`
+  const canCancel =
+    (booking.status === 'confirmed' || booking.status === 'active') &&
+    booking.booking_date >= todayStr
 
   if (!booking.desk) {
     return (
@@ -99,11 +122,6 @@ export function BookingConfirmationCard({ booking }: { booking: Booking }) {
           </button>
         )}
       </div>
-      {error && (
-        <div className="p-2 text-sm text-center text-red-200 bg-red-900/50">
-          {error}
-        </div>
-      )}
     </div>
   )
 }

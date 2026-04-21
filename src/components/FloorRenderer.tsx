@@ -9,6 +9,8 @@ import {
 import type { Desk, User } from '../api'
 import { FLOOR_CONTAINER } from '../floorTheme'
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import { useEffect } from 'react'
 import type { Booking } from '../api'
 import { deleteBooking } from '../api'
@@ -30,6 +32,7 @@ export function FloorRenderer({
   userMap,
 }: Props) {
   const { user, token } = useAuth()
+  const queryClient = useQueryClient()
   const role = user?.role?.name
   const [hoverCell, setHoverCell] = useState<{ x: number; y: number } | null>(
     null,
@@ -44,7 +47,7 @@ export function FloorRenderer({
   const canBook = !!user
   const DESK_W = 64
   const DESK_H = 40
-  
+
   //Booking state for UI updates
   const [bookings, setBookings] = useState<Booking[]>([])
 
@@ -56,7 +59,7 @@ export function FloorRenderer({
         desk_id: d.id,
         user_id: Number(d.bookedBy),
         booking_date: date,
-        status: "active",
+        status: 'active',
       }))
   }
   useEffect(() => {
@@ -85,19 +88,33 @@ export function FloorRenderer({
 
     const prev = [...desks]
 
+    // Optimistic update for immediate UI feedback
     setDesks((p) =>
       p.map((d) =>
         d.id === desk.id
           ? { ...d, isBooked: true, bookedBy: Number(user.id) }
-          : d
-      )
+          : d,
+      ),
     )
 
     try {
-      await bookDesk(desk.id, token, date)
-    } catch {
+      const newBooking = await bookDesk(desk.id, token, date)
+      // Update desk with bookingId from response
+      setDesks((p) =>
+        p.map((d) =>
+          d.id === desk.id ? { ...d, bookingId: newBooking.id } : d,
+        ),
+      )
+      // Invalidate query to show the confirmation card without a page refresh
+      await queryClient.invalidateQueries({ queryKey: ['myBooking', date] })
+      toast.success(
+        'Booking confirmed! A confirmation email with a QR code has been sent.',
+      )
+    } catch (err) {
       setDesks(prev)
-      alert("Booking failed")
+      const message =
+        err instanceof Error ? err.message : 'An unknown error occurred.'
+      toast.error(`Booking failed: ${message}`)
     }
   }
 
@@ -168,7 +185,7 @@ export function FloorRenderer({
   // ---------------- DELETE ----------------
   const handleDeleteBooking = async (bookingId: number) => {
     if (!token) return
-    if (!confirm("Delete this booking?")) return
+    if (!confirm('Delete this booking?')) return
 
     const prev = [...desks]
 
@@ -177,8 +194,8 @@ export function FloorRenderer({
       p.map((d) =>
         d.bookingId === bookingId
           ? { ...d, isBooked: false, bookedBy: null, bookingId: undefined }
-          : d
-      )
+          : d,
+      ),
     )
 
     try {
@@ -463,7 +480,7 @@ export function FloorRenderer({
             </tbody>
           </table>
         </div>
-)}
+      )}
     </>
   )
 }

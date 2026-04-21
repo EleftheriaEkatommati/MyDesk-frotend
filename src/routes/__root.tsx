@@ -2,6 +2,7 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Sidebar } from '../components/Sidebar'
 import { useAuth } from '../auth'
+import { Toaster } from 'react-hot-toast'
 
 interface MyRouterContext {
   auth: ReturnType<typeof useAuth>
@@ -20,6 +21,7 @@ function RootComponent() {
       <main className="flex-1 p-8 text-black dark:text-white">
         <Outlet />
       </main>
+      <Toaster position="bottom-center" />
       <TanStackRouterDevtools position="bottom-right" />
     </div>
   )
