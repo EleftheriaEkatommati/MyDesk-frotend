@@ -153,6 +153,19 @@ export function FloorRenderer({
   }
 
   // ---------------- DELETE ----------------
+  const handleDelete = async (id: string) => {
+    if (!isAdmin || !token) return
+
+    const backup = desks
+    setDesks((p) => p.filter((d) => d.id !== id))
+
+    try {
+      await deleteDesk(id, token)
+    } catch {
+      setDesks(backup)
+    }
+  }
+  // ---------------- DELETE ----------------
   const handleDeleteBooking = async (bookingId: number) => {
     if (!token) return
     if (!confirm("Delete this booking?")) return
