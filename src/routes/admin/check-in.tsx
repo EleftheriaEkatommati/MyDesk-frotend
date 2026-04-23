@@ -30,7 +30,7 @@ function CheckInPage() {
                   Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ qr_data: decodedText }),
-              }
+              },
             )
 
             if (!res.ok) {
@@ -41,18 +41,22 @@ function CheckInPage() {
             const booking = await res.json()
             toast.success(`Checked in: Desk ${booking.desk_id}`)
 
-            await scanner.stop()
+            // Stop the scanner only if it's currently running
+            if (scanner.isScanning) {
+              await scanner.stop()
+            }
           } catch (err) {
-            toast.error(
-              err instanceof Error ? err.message : 'Check-in failed'
-            )
+            toast.error(err instanceof Error ? err.message : 'Check-in failed')
           }
-        }
+        },
       )
       .catch(console.error)
 
     return () => {
-      scanner.stop().catch(() => {})
+      // Ensure scanner is stopped on component unmount
+      if (scanner.isScanning) {
+        scanner.stop().catch(console.error)
+      }
     }
   }, [token])
 

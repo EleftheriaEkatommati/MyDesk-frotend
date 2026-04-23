@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { BookingConfirmationCard } from './BookingConfirmationCard'
 import {
@@ -12,7 +12,14 @@ import {
   CheckIcon,
   UserIcon,
 } from '@heroicons/react/24/solid'
-import { getDesksByFloor, getFloors, getMyBookings } from '../api'
+import {
+  createFloor,
+  deleteFloor,
+  getDesksByFloor,
+  getFloors,
+  getMyBookings,
+} from '../api'
+import toast from 'react-hot-toast'
 import { useAuth } from '../auth'
 const getToday = () => {
   const d = new Date()
@@ -33,8 +40,10 @@ function formatDate(date: Date) {
   return `${year}-${month}-${day}`
 }
 const BookingCalendar: React.FC = () => {
-  const { token } = useAuth()
+  const { user, token } = useAuth()
   const [selectedDate, setSelectedDate] = useState<Date>(getToday())
+  const isAdmin = user?.role?.name === 'admin'
+  const queryClient = useQueryClient()
 
   const { data: floors, isLoading: floorsLoading } = useQuery({
     queryKey: ['floors'],
@@ -91,12 +100,35 @@ const BookingCalendar: React.FC = () => {
   const bookedDesks = floorStats.reduce((sum, stat) => sum + stat.booked, 0)
   const occupancyRate = totalDesks > 0 ? (bookedDesks / totalDesks) * 100 : 0
 
+  const handleDeleteFloor = async (floorId: number) => {
+    if (!token || !isAdmin) return
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this floor? This will delete all desks and cancel all bookings on this floor. This action cannot be undone.',
+      )
+    ) {
+      return
+    }
+    try {
+      await deleteFloor(floorId, token)
+      toast.success('Floor deleted successfully.')
+      await queryClient.invalidateQueries({ queryKey: ['floors'] })
+      // Also need to invalidate desks for the current date as stats will change
+      await queryClient.invalidateQueries({ queryKey: ['desksByFloor'] })
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to delete floor.'
+      toast.error(message)
+    }
+  }
+
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-slate-200">
         Availability and Booking Calendar
       </h2>
 
+      {isAdmin && <CreateFloorForm />}
       {/* --- Booking Confirmation Card --- */}
       {myBooking && <BookingConfirmationCard booking={myBooking} />}
 
@@ -220,47 +252,148 @@ const BookingCalendar: React.FC = () => {
               }
               console.log('SELECTED DATE:', selectedDateString)
               return (
-                <Link
-                  from="/"
-                  to="/floor/$floorId"
-                  params={{ floorId: stat.id.toString() }}
-                  search={{ date: selectedDateString }}
-                  className={`block p-4 rounded-lg ${bgColor} text-white shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    {/* The floor_name is now correctly mapped in the API layer */}
-                    <h4 className="font-bold text-lg">{stat.floor_name}</h4>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <div className="text-sm space-y-2 bg-white/10 rounded-md p-3 backdrop-blur-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Squares2X2Icon className="h-4 w-4" />
-                        <span className="font-semibold">Total:</span>
-                      </div>
-                      <span className="font-bold">{stat.total}</span>
+                <div key={stat.id} className="relative">
+                  <Link
+                    from="/"
+                    to="/floor/$floorId"
+                    params={{ floorId: stat.id.toString() }}
+                    search={{ date: selectedDateString }}
+                    className={`block p-4 rounded-lg ${bgColor} text-white shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-bold text-lg">{stat.floor_name}</h4>
+                      <Icon className="h-6 w-6" />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckIcon className="h-4 w-4" />
-                        <span className="font-semibold">Available:</span>
+                    <div className="text-sm space-y-2 bg-white/10 rounded-md p-3 backdrop-blur-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Squares2X2Icon className="h-4 w-4" />
+                          <span className="font-semibold">Total:</span>
+                        </div>
+                        <span className="font-bold">{stat.total}</span>
                       </div>
-                      <span className="font-bold">{stat.available}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="h-4 w-4" />
-                        <span className="font-semibold">Booked:</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckIcon className="h-4 w-4" />
+                          <span className="font-semibold">Available:</span>
+                        </div>
+                        <span className="font-bold">{stat.available}</span>
                       </div>
-                      <span className="font-bold">{stat.booked}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <UserIcon className="h-4 w-4" />
+                          <span className="font-semibold">Booked:</span>
+                        </div>
+                        <span className="font-bold">{stat.booked}</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleDeleteFloor(stat.id)
+                      }}
+                      title="Delete Floor"
+                      className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-sm text-white shadow-md transition-colors hover:bg-red-700"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               )
             })}
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function CreateFloorForm() {
+  const [floorNumber, setFloorNumber] = useState('')
+  const [floorName, setFloorName] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const { token } = useAuth()
+  const queryClient = useQueryClient()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!token || !floorNumber) {
+      toast.error('Floor number is required.')
+      return
+    }
+    setIsCreating(true)
+    try {
+      await createFloor(
+        {
+          floorNumber: Number(floorNumber),
+          floorName: floorName || undefined,
+        },
+        token,
+      )
+      toast.success('Floor created successfully!')
+      setFloorNumber('')
+      setFloorName('')
+      await queryClient.invalidateQueries({ queryKey: ['floors'] })
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to create floor.'
+      toast.error(message)
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  return (
+    <div className="mb-8 p-6 bg-slate-100 dark:bg-slate-800 rounded-lg shadow">
+      <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
+        Create New Floor
+      </h3>
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col sm:flex-row gap-4 items-end"
+      >
+        <div className="flex-1">
+          <label
+            htmlFor="floorNumber"
+            className="block text-sm font-medium text-slate-600 dark:text-slate-400"
+          >
+            Floor Number (Required)
+          </label>
+          <input
+            id="floorNumber"
+            type="number"
+            value={floorNumber}
+            onChange={(e) => setFloorNumber(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            required
+          />
+        </div>
+        <div className="flex-1">
+          <label
+            htmlFor="floorName"
+            className="block text-sm font-medium text-slate-600 dark:text-slate-400"
+          >
+            Floor Name (Optional)
+          </label>
+          <input
+            id="floorName"
+            type="text"
+            value={floorName}
+            onChange={(e) => setFloorName(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={isCreating}
+          className="px-4 py-2 font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+        >
+          {isCreating ? 'Creating...' : 'Create Floor'}
+        </button>
+      </form>
     </div>
   )
 }

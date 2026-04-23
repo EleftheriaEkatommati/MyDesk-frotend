@@ -55,6 +55,11 @@ export type AuthResponse = {
   token: string
 }
 
+export type FloorCreate = {
+  floorNumber: number
+  floorName?: string
+}
+
 // The AuthUser was problematic as it mixed two different data shapes.
 // The login function will now return the direct AuthResponse.
 // The application logic can then use the token from AuthResponse to fetch the full user profile if needed.
@@ -444,4 +449,41 @@ export async function updateDesk(
 
   if (!res.ok) throw new Error('Failed to update desk')
   return res.json()
+}
+
+export async function createFloor(
+  floorData: FloorCreate,
+  token: string,
+): Promise<Floor> {
+  const res = await fetch(`${ADMIN_API_BASE}/floors`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(floorData),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.detail || 'Failed to create floor')
+  }
+  return res.json()
+}
+
+export async function deleteFloor(
+  floorId: number,
+  token: string,
+): Promise<void> {
+  const res = await fetch(`${ADMIN_API_BASE}/floors/${floorId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) {
+    // Try to get error detail, but don't fail if the body is empty
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.detail || `Failed to delete floor ${floorId}`)
+  }
+  // A 204 response has no body, so we don't return anything.
 }
