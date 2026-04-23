@@ -63,6 +63,17 @@ export function Sidebar() {
             Admin
           </Link>
         )}
+        {user?.role?.name === 'admin' && (
+          <>
+            <Link
+              to="/check-in"
+              className={linkStyles}
+              activeProps={{ className: activeLinkStyles }}
+            >
+              Check-In
+            </Link>
+          </>
+        )}
       </nav>
       {user && (
         <div className="p-4 mt-auto border-t border-slate-700 space-y-2">
