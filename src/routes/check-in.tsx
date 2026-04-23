@@ -16,7 +16,7 @@ export const Route = createFileRoute('/check-in')({
   component: CheckInPage,
 })
 
-const COOLDOWN_MS = 10_000 // ⏱ prevent same QR for 10 seconds
+const COOLDOWN_MS = 10_000
 
 function CheckInPage() {
   const { token } = useAuth()
@@ -25,6 +25,7 @@ function CheckInPage() {
   const isRunningRef = useRef(false)
 
   const lastScanMap = useRef<Map<string, number>>(new Map())
+  const scanLockRef = useRef(false)
 
   const [booking, setBooking] = useState<any | null>(null)
 
@@ -43,12 +44,14 @@ function CheckInPage() {
             const now = Date.now()
             const lastTime = lastScanMap.current.get(decodedText)
 
-            // 🚫 prevent duplicate scan spam
-            if (lastTime && now - lastTime < COOLDOWN_MS) {
-              return
-            }
+            //prevent same QR spam
+            if (lastTime && now - lastTime < COOLDOWN_MS) return
+
+            // prevent concurrent scans
+            if (scanLockRef.current) return
 
             lastScanMap.current.set(decodedText, now)
+            scanLockRef.current = true
 
             try {
               const res = await fetch(
@@ -72,15 +75,16 @@ function CheckInPage() {
 
               setBooking(data)
 
-              toast.success(`Checked in successfully`)
+              toast.success('Checked in successfully')
 
-              // optional: auto-hide welcome after 5s
+              // auto close welcome modal after 5s
               setTimeout(() => setBooking(null), 5000)
-
             } catch (err) {
               toast.error(
                 err instanceof Error ? err.message : 'Check-in failed'
               )
+            } finally {
+              scanLockRef.current = false
             }
           }
         )
