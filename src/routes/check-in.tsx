@@ -1,9 +1,7 @@
-// src/routes/admin/check-in.tsx
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { Html5Qrcode } from 'html5-qrcode'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
-import { redirect } from '@tanstack/react-router'
 import { useAuth, authService } from '../auth'
 
 export const Route = createFileRoute('/check-in')({
@@ -21,47 +19,75 @@ export const Route = createFileRoute('/check-in')({
 function CheckInPage() {
   const { token } = useAuth()
 
+  // keep scanner instance stable across renders
+  const scannerRef = useRef<Html5Qrcode | null>(null)
+  const isRunningRef = useRef(false)
+
   useEffect(() => {
+    if (!token) return
+
     const scanner = new Html5Qrcode('reader')
+    scannerRef.current = scanner
 
-    scanner
-      .start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: 250 },
-        async (decodedText) => {
-          try {
-            const res = await fetch(
-              'http://localhost:8000/api/v1/bookings/check-in',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ qr_data: decodedText }),
+    const startScanner = async () => {
+      try {
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: 250 },
+          async (decodedText) => {
+            try {
+              const res = await fetch(
+                'http://localhost:8000/api/v1/bookings/check-in',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ qr_data: decodedText }),
+                }
+              )
+
+              if (!res.ok) {
+                const err = await res.json()
+                throw new Error(err.detail || 'Check-in failed')
               }
-            )
 
-            if (!res.ok) {
-              const err = await res.json()
-              throw new Error(err.detail)
+              const booking = await res.json()
+              toast.success(`Checked in: Desk ${booking.desk_id}`)
+
+              if (isRunningRef.current) {
+                isRunningRef.current = false
+                await scanner.stop()
+              }
+            } catch (err) {
+              toast.error(
+                err instanceof Error ? err.message : 'Check-in failed'
+              )
             }
-
-            const booking = await res.json()
-            toast.success(`Checked in: Desk ${booking.desk_id}`)
-
-            await scanner.stop()
-          } catch (err) {
-            toast.error(
-              err instanceof Error ? err.message : 'Check-in failed'
-            )
           }
-        }
-      )
-      .catch(console.error)
+        )
+
+        isRunningRef.current = true
+      } catch (err) {
+        console.error('Failed to start scanner:', err)
+      }
+    }
+
+    startScanner()
 
     return () => {
-      scanner.stop().catch(() => {})
+      const currentScanner = scannerRef.current
+
+      if (currentScanner && isRunningRef.current) {
+        isRunningRef.current = false
+
+        currentScanner
+          .stop()
+          .catch(() => {
+
+          })
+      }
     }
   }, [token])
 
