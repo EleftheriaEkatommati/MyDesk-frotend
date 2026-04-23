@@ -16,22 +16,19 @@ export const Route = createFileRoute('/check-in')({
   component: CheckInPage,
 })
 
-const COOLDOWN_MS = 10_000
+const COOLDOWN_MS = 5_000 // Cooldown per QR code to prevent spam
 
 function CheckInPage() {
   const { token } = useAuth()
-
   const scannerRef = useRef<Html5Qrcode | null>(null)
-  const isRunningRef = useRef(false)
-
   const lastScanMap = useRef<Map<string, number>>(new Map())
   const scanLockRef = useRef(false)
-
   const [booking, setBooking] = useState<any | null>(null)
 
   useEffect(() => {
     if (!token) return
 
+    // Initialize scanner only once
     const scanner = new Html5Qrcode('reader')
     scannerRef.current = scanner
 
@@ -39,12 +36,12 @@ function CheckInPage() {
       try {
         await scanner.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: 250 },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
           async (decodedText) => {
             const now = Date.now()
             const lastTime = lastScanMap.current.get(decodedText)
 
-            //prevent same QR spam
+            // Prevent scanning the same QR code within the cooldown period
             if (lastTime && now - lastTime < COOLDOWN_MS) return
 
             // prevent concurrent scans
@@ -63,35 +60,31 @@ function CheckInPage() {
                     Authorization: `Bearer ${token}`,
                   },
                   body: JSON.stringify({ qr_data: decodedText }),
-                }
+                },
               )
 
               if (!res.ok) {
-                const err = await res.json()
+                const err = await res.json().catch(() => ({}))
                 throw new Error(err.detail || 'Check-in failed')
               }
 
               const data = await res.json()
-
-              setBooking(data)
-
-              toast.success('Checked in successfully')
-
-              // auto close welcome modal after 5s
-              setTimeout(() => setBooking(null), 5000)
+              setBooking(data) // Show the success modal
+              toast.success('Checked in successfully!')
             } catch (err) {
               toast.error(
-                err instanceof Error ? err.message : 'Check-in failed'
+                err instanceof Error ? err.message : 'Check-in failed',
               )
             } finally {
               scanLockRef.current = false
             }
-          }
+          },
         )
-
-        isRunningRef.current = true
       } catch (err) {
         console.error('Failed to start scanner:', err)
+        toast.error(
+          'Could not start QR scanner. Please check camera permissions.',
+        )
       }
     }
 
@@ -99,10 +92,8 @@ function CheckInPage() {
 
     return () => {
       const scannerInstance = scannerRef.current
-
-      if (scannerInstance && isRunningRef.current) {
-        isRunningRef.current = false
-        scannerInstance.stop().catch(() => {})
+      if (scannerInstance && scannerInstance.isScanning) {
+        scannerInstance.stop().catch(console.error)
       }
     }
   }, [token])
@@ -110,38 +101,33 @@ function CheckInPage() {
   return (
     <div className="p-6 relative">
       <h1 className="text-xl font-bold mb-4">QR Check-In</h1>
-
       <div id="reader" className="max-w-md mx-auto" />
 
       {booking && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 text-center shadow-xl max-w-md w-full">
-            <h2 className="text-2xl font-bold text-green-600 mb-2">
-              Welcome!
-            </h2>
+          <div className="bg-slate-900 text-white rounded-xl p-8 text-center shadow-xl max-w-md w-full border border-slate-700">
+            <h2 className="text-2xl font-bold text-green-500 mb-2">Welcome!</h2>
 
-            <p className="text-gray-600 mb-6">
-              Your check-in was successful.
-            </p>
+            <p className="text-slate-400 mb-6">Check-in was successful.</p>
 
             <div className="space-y-2 text-lg">
               <div>
-                👤 <span className="font-bold">User:</span>{' '}
-                <span className="text-green-600 font-semibold">
+                👤 <span className="font-bold text-slate-300">User:</span>{' '}
+                <span className="text-green-500 font-semibold">
                   {booking.user?.name} {booking.user?.surname}
                 </span>
               </div>
 
               <div>
-                🪑 <span className="font-bold">Desk:</span>{' '}
-                <span className="text-blue-600 font-semibold">
+                🪑 <span className="font-bold text-slate-300">Desk:</span>{' '}
+                <span className="text-blue-400 font-semibold">
                   {booking.desk?.id}
                 </span>
               </div>
 
               <div>
-                🏢 <span className="font-bold">Floor:</span>{' '}
-                <span className="text-purple-600 font-semibold">
+                🏢 <span className="font-bold text-slate-300">Floor:</span>{' '}
+                <span className="text-purple-400 font-semibold">
                   {booking.desk?.floor_entity?.name}
                 </span>
               </div>
@@ -149,7 +135,7 @@ function CheckInPage() {
 
             <button
               onClick={() => setBooking(null)}
-              className="mt-6 px-4 py-2 bg-black text-white rounded-lg"
+              className="mt-6 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
             >
               Close
             </button>
