@@ -14,6 +14,7 @@ import {
 import {
   createFloor,
   deleteFloor,
+  getAttendance,
   getDesksByFloor,
   getFloors,
   getMyBookings,
@@ -57,6 +58,13 @@ const BookingCalendar: React.FC = () => {
     enabled: !!token,
   })
   const myBooking = myBookingResult?.[0]
+
+  const { data: attendance } = useQuery({
+    queryKey: ['attendance', selectedDateString],
+    queryFn: () => getAttendance(token!, selectedDateString),
+    enabled: !!token,
+  })
+
 
   // Fetch desks for each floor individually to ensure we can calculate stats correctly.
   const floorDeskQueries = useQueries({
@@ -346,6 +354,38 @@ const BookingCalendar: React.FC = () => {
               )
             })}
           </div>
+          <div className="mt-8">
+            <h3 className="text-xl font-bold mb-4">
+              Παρουσίες ({selectedDateString})
+            </h3>
+
+            {attendance?.length === 0 && (
+              <p className="text-slate-400">Δεν υπάρχουν παρουσίες.</p>
+            )}
+
+            <div className="space-y-3">
+              {attendance?.map((b) => (
+                <div
+                  key={b.id}
+                  className="p-4 bg-slate-800 rounded-lg flex justify-between"
+                >
+                  <div>
+                    👤 {b.user?.name} {b.user?.surname}
+                  </div>
+
+                  <div>
+                    🪑 Desk {b.desk?.id}
+                  </div>
+
+                  <div>
+                    🏢 {b.desk?.floor?.floor_name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+
         </div>
       </div>
     </div>
