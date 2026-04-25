@@ -4,6 +4,7 @@ import {
   ArrowLeftOnRectangleIcon,
   BookmarkSquareIcon,
   HomeIcon,
+  ChartBarIcon,
   QrCodeIcon,
   UserCircleIcon,
   UserGroupIcon,
@@ -106,6 +107,14 @@ export function Sidebar({
                 >
                   <QrCodeIcon className="h-5 w-5" />
                   Check-In
+                </Link>
+                <Link
+                  to="/statistics"
+                  className={linkStyles}
+                  activeProps={{ className: activeLinkStyles }}
+                >
+                  <ChartBarIcon className="h-5 w-5" />
+                  Statistics
                 </Link>
               </div>
             </div>

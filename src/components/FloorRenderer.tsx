@@ -50,6 +50,32 @@ export function FloorRenderer({
     }
     return map
   }, [attendance])
+
+  const allBookingsForTable = useMemo(() => {
+    // Use the `desks` prop as the source of truth for all bookings on the floor.
+    const bookingsFromDesks = desks
+      .filter((desk) => desk.isBooked && desk.bookingId && desk.bookedBy)
+      .map(
+        (desk): Booking => ({
+          id: desk.bookingId!,
+          desk_id: desk.id,
+          user_id: desk.bookedBy!,
+          booking_date: date,
+          status: 'confirmed', // Default to 'confirmed'
+          desk: desk,
+        }),
+      )
+
+    // Create a map of statuses from the attendance data for quick lookups.
+    const statusMap = new Map((attendance ?? []).map((b) => [b.id, b.status]))
+
+    // Update the status for bookings that are in the attendance list (i.e., checked in).
+    return bookingsFromDesks.map((b) => ({
+      ...b,
+      status: statusMap.get(b.id) ?? b.status,
+    }))
+  }, [desks, attendance, date])
+
   const role = user?.role?.name
   const [hoverCell, setHoverCell] = useState<{ x: number; y: number } | null>(
     null,
@@ -466,16 +492,20 @@ export function FloorRenderer({
               <tr className="border-b">
                 <th className="px-4 py-2 text-left">Booking ID</th>
                 <th className="px-4 py-2 text-left">Desk</th>
+                <th className="px-4 py-2 text-left">Status</th>
                 <th className="px-4 py-2 text-left">User</th>
                 <th className="px-4 py-2 text-left">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {(attendance ?? []).map((b) => (
+              {allBookingsForTable.map((b) => (
                 <tr key={b.id} className="border-b">
                   <td className="px-4 py-2">{b.id}</td>
                   <td className="px-4 py-2">{b.desk_id}</td>
+                  <td className="px-4 py-2 capitalize">
+                    {b.status.toLowerCase().replace('_', ' ')}
+                  </td>
                   <td className="px-4 py-2">
                     {userMap?.get(b.user_id)?.name ?? b.user_id}
                   </td>

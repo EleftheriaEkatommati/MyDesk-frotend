@@ -198,7 +198,7 @@ function BookingCard({ booking }: { booking: Booking }) {
             <MapPinIcon className="flex-shrink-0 w-5 h-5 mt-0.5 text-slate-400" />
             <div>
               <p className="font-semibold text-slate-700 dark:text-slate-300">
-                {booking.desk?.floor?.floor_name ?? 'Unknown Floor'}
+                {booking.desk?.floor?.floorName ?? 'Unknown Floor'}
               </p>
               <p className="text-slate-500 dark:text-slate-400">
                 Desk {booking.desk_id}

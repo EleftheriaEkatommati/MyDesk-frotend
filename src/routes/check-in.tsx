@@ -136,7 +136,7 @@ function CheckInPage() {
               <div>
                 🏢 <span className="font-bold text-slate-300">Floor:</span>{' '}
                 <span className="text-purple-400 font-semibold">
-                  {booking.desk?.floor_entity?.floorName}
+                  {booking.desk?.floor?.floorName}
                 </span>
               </div>
             </div>

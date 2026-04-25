@@ -83,13 +83,13 @@ function FloorDetail() {
   }, [users])
   console.log('Status of myBooking:', myBooking?.status)
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">{floor.floor_name}</h2>
+    <div className="flex flex-col items-center">
+      <h2 className="text-2xl font-bold mb-4">{floor.floorName}</h2>
 
       {/* --- Booking Confirmation Card --- */}
       {myBooking && <BookingConfirmationCard booking={myBooking} />}
 
-      <div className="w-full overflow-x-auto pb-4">
+      <div className="w-full overflow-x-auto pb-4 flex flex-col items-center">
         <FloorRenderer
           desks={desks}
           setDesks={setDesks}

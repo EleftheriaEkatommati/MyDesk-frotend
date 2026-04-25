@@ -136,7 +136,7 @@ export function BookingConfirmationCard({ booking }: { booking: Booking }) {
             <div>
               <span className="opacity-80 text-sm">Location</span>
               <p className="font-bold leading-tight">
-                Floor {booking.desk.floorId}: {booking.desk.floor?.floor_name}
+                Floor {booking.desk.floorId}: {booking.desk.floor?.floorName}
               </p>
               <p className="opacity-90">Desk {booking.desk.id}</p>
             </div>

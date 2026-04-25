@@ -166,7 +166,7 @@ const BookingCalendar: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-screen">
+    <div className="space-y-8">
       {isAdmin && <CreateFloorForm />}
       {myBooking && <BookingConfirmationCard booking={myBooking} />}
 
@@ -269,13 +269,14 @@ const BookingCalendar: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {floorStats.map((stat) => {
-                let statusColor = 'bg-green-500'
+                let statusColor =
+                  'bg-gradient-to-br from-green-500 to-green-600'
                 let Icon = CheckCircleIcon
                 if (stat.total > 0 && stat.booked === stat.total) {
-                  statusColor = 'bg-red-600'
+                  statusColor = 'bg-gradient-to-br from-red-500 to-red-600'
                   Icon = XCircleIcon
                 } else if (stat.total > 0 && stat.booked >= stat.total / 2) {
-                  statusColor = 'bg-amber-500'
+                  statusColor = 'bg-gradient-to-br from-amber-400 to-amber-500'
                   Icon = ExclamationTriangleIcon
                 }
 
@@ -285,24 +286,26 @@ const BookingCalendar: React.FC = () => {
                       to="/floor/$floorId"
                       params={{ floorId: stat.id.toString() }}
                       search={{ date: selectedDateString }}
-                      className={`block p-5 rounded-xl ${statusColor} text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]`}
+                      className={`block p-6 rounded-2xl ${statusColor} text-white shadow-lg hover:shadow-xl transition-all active:scale-[0.98] [text-shadow:0_1px_3px_rgba(0,0,0,0.3)]`}
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-bold text-lg">{stat.floor_name}</h4>
+                        <h4 className="font-extrabold text-2xl tracking-tight">
+                          {stat.floorName}
+                        </h4>
                         <Icon className="h-6 w-6 opacity-80" />
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-center text-[10px] uppercase tracking-wider bg-black/20 rounded-lg p-2 backdrop-blur-sm">
+                      <div className="grid grid-cols-3 gap-2 text-center uppercase tracking-wider bg-black/25 rounded-lg p-3 backdrop-blur-sm">
                         <div>
-                          <p className="opacity-70 text-[9px]">Total</p>
-                          <p className="text-sm font-bold">{stat.total}</p>
+                          <p className="opacity-90 text-xs">Total</p>
+                          <p className="text-2xl font-bold">{stat.total}</p>
                         </div>
                         <div>
-                          <p className="opacity-70 text-[9px]">Free</p>
-                          <p className="text-sm font-bold">{stat.available}</p>
+                          <p className="opacity-90 text-xs">Free</p>
+                          <p className="text-2xl font-bold">{stat.available}</p>
                         </div>
                         <div>
-                          <p className="opacity-70 text-[9px]">Used</p>
-                          <p className="text-sm font-bold">{stat.booked}</p>
+                          <p className="opacity-90 text-xs">Used</p>
+                          <p className="text-2xl font-bold">{stat.booked}</p>
                         </div>
                       </div>
                     </Link>
@@ -355,7 +358,7 @@ const BookingCalendar: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-bold text-slate-900 dark:text-slate-200">
-                          {b.desk?.floor?.floor_name}
+                          {b.desk?.floor?.floorName}
                         </p>
                         <p className="text-[10px] text-slate-500">
                           Desk {b.desk?.id}
