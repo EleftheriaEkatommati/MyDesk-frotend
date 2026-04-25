@@ -288,6 +288,33 @@ export async function getMyBookings(
   return res.json()
 }
 
+
+
+export async function getAttendance(
+  token: string,
+  date: string,
+  floorId?: number,
+): Promise<Booking[]> {
+  const url = new URL(`${API_BASE}/bookings/attendance`)
+  url.searchParams.append('date', date)
+
+  if (floorId) {
+    url.searchParams.append('floor_id', floorId.toString())
+  }
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) throw new Error('Failed to fetch attendance')
+
+  return res.json()
+}
+
+
+
 /**
  * Checks in a booking using the data from a QR code.
  * @param qrData The raw string data from the QR code (e.g., "BOOKING_ID:123").
