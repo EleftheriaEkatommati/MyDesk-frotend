@@ -65,7 +65,6 @@ const BookingCalendar: React.FC = () => {
     enabled: !!token,
   })
 
-
   // Fetch desks for each floor individually to ensure we can calculate stats correctly.
   const floorDeskQueries = useQueries({
     queries: (floors ?? []).map((floor) => ({
@@ -367,25 +366,19 @@ const BookingCalendar: React.FC = () => {
               {attendance?.map((b) => (
                 <div
                   key={b.id}
-                  className="p-4 bg-slate-800 rounded-lg flex justify-between"
+                  className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4"
                 >
                   <div>
                     👤 {b.user?.name} {b.user?.surname}
                   </div>
 
-                  <div>
-                    🪑 Desk {b.desk?.id}
-                  </div>
+                  <div>🪑 Desk {b.desk?.id}</div>
 
-                  <div>
-                    🏢 {b.desk?.floor?.floor_name}
-                  </div>
+                  <div>🏢 {b.desk?.floor?.floor_name}</div>
                 </div>
               ))}
             </div>
           </div>
-
-
         </div>
       </div>
     </div>

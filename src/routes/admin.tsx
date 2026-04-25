@@ -40,28 +40,26 @@ function AdminPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Admin - User Management</h1>
-      <div className="mt-8 overflow-x-auto">
-        <h2 className="text-xl font-semibold mb-4">All Users</h2>
-        <div className="shadow border-b border-gray-200 dark:border-slate-700 sm:rounded-lg">
-          <table className="min-w-full bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
-            <thead className="bg-gray-50 dark:bg-slate-700/50">
+      <h1 className="text-3xl font-bold mb-8 text-slate-800 dark:text-slate-200">
+        User Management
+      </h1>
+      <div className="mt-8 overflow-x-auto bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
+        <div className="align-middle inline-block min-w-full">
+          <table className="min-w-full">
+            <thead className="bg-slate-50 dark:bg-slate-700/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {users.length > 0 ? (
                 users.map((user) => (
                   <UserRow
@@ -74,7 +72,7 @@ function AdminPage() {
               ) : (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={3}
                     className="px-6 py-12 text-center text-slate-500"
                   >
                     No users found.
@@ -156,22 +154,39 @@ function UserRow({
 
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-slate-700">
-      <td className="px-6 py-4">{user.id}</td>
-
       <td className="px-6 py-4">
-        <div className="font-medium">
-          {user.name ?? ''} {user.surname ?? ''}
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 flex-shrink-0 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+            <span className="font-bold text-slate-500 dark:text-slate-400">
+              {user.name?.[0]?.toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <div className="font-medium text-slate-800 dark:text-slate-200">
+              {user.name ?? ''} {user.surname ?? ''}
+            </div>
+            <div className="text-sm text-slate-500 dark:text-slate-400">
+              {user.email}
+            </div>
+          </div>
         </div>
-        <div className="text-gray-500">{user.email}</div>
       </td>
-
-      <td className="px-6 py-4">{user.role?.name}</td>
-
-      <td className="px-6 py-4 flex gap-3">
+      <td className="px-6 py-4">
+        <span
+          className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold capitalize leading-tight ${
+            user.role?.name === 'admin'
+              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+              : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+          }`}
+        >
+          {user.role?.name}
+        </span>
+      </td>
+      <td className="px-6 py-4 flex items-center gap-3">
         {user.role?.name === 'user' ? (
           <button
             onClick={() => handleRoleChange('admin')}
-            className="text-indigo-600 hover:underline dark:text-indigo-400"
+            className="px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-600 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/50 hover:shadow-sm hover:-translate-y-px transition-all duration-150"
           >
             Make Admin
           </button>
@@ -179,15 +194,14 @@ function UserRow({
           <button
             onClick={() => handleRoleChange('user')}
             disabled={auth.user?.id === user.id}
-            className="text-yellow-600 hover:underline disabled:opacity-50 dark:text-yellow-500"
+            className="px-3 py-1.5 text-sm font-medium text-yellow-600 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-600 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-900/50 hover:shadow-sm hover:-translate-y-px transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
           >
             Make User
           </button>
         )}
-
         <button
           onClick={handleDelete}
-          className="ml-3 text-red-600 hover:underline dark:text-red-400"
+          className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/50 hover:shadow-sm hover:-translate-y-px transition-all duration-150"
         >
           Delete
         </button>

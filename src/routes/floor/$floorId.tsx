@@ -89,13 +89,15 @@ function FloorDetail() {
       {/* --- Booking Confirmation Card --- */}
       {myBooking && <BookingConfirmationCard booking={myBooking} />}
 
-      <FloorRenderer
-        desks={desks}
-        setDesks={setDesks}
-        date={date}
-        floorId={floor.id}
-        userMap={userMap}
-      />
+      <div className="w-full overflow-x-auto pb-4">
+        <FloorRenderer
+          desks={desks}
+          setDesks={setDesks}
+          date={date}
+          floorId={floor.id}
+          userMap={userMap}
+        />
+      </div>
     </div>
   )
 }

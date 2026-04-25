@@ -411,7 +411,7 @@ export function FloorRenderer({
       </div>
 
       {/* LEGEND */}
-      <div className="mt-8 flex gap-6 bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm w-fit">
+      <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:gap-6 bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm w-fit">
         {/* Available */}
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-center">
