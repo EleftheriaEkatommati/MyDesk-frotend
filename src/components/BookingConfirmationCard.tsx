@@ -47,16 +47,69 @@ export function BookingConfirmationCard({ booking }: { booking: Booking }) {
     }
   }
 
-  // A booking can be cancelled if it is 'confirmed' or 'active' and is for today or a future date.
-  // Using string comparison for 'YYYY-MM-DD' format is safe and avoids timezone issues.
+  // A booking can be cancelled if it is 'confirmed' or 'active'.
+  // Past bookings can also be cancelled, unless they were checked-in or already cancelled.
   const today = new Date()
-  const yyyy = today.getFullYear()
-  const mm = String(today.getMonth() + 1).padStart(2, '0')
-  const dd = String(today.getDate()).padStart(2, '0')
-  const todayStr = `${yyyy}-${mm}-${dd}`
+  today.setHours(0, 0, 0, 0)
+
+  // The booking date is a string 'YYYY-MM-DD'. We need to parse it carefully
+  // to avoid timezone issues.
+  const dateParts = booking.booking_date.split('-').map(Number)
+  const bookingDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2])
+
+  const isPast = bookingDate < today
+  const lowerCaseStatus = booking.status.toLowerCase()
+  // A booking can be cancelled if it's 'confirmed', or if it's 'active' and not in the past.
   const canCancel =
-    (booking.status === 'confirmed' || booking.status === 'active') &&
-    booking.booking_date >= todayStr
+    lowerCaseStatus === 'confirmed' || (lowerCaseStatus === 'active' && !isPast)
+
+  const getCancelTitle = () => {
+    if (canCancel) {
+      return 'Cancel this booking'
+    }
+    if (lowerCaseStatus === 'cancelled') {
+      return 'This booking has already been cancelled.'
+    }
+    if (lowerCaseStatus === 'checked_in') {
+      return 'This booking has been checked in and cannot be cancelled.'
+    }
+    return 'This booking cannot be cancelled.'
+  }
+
+  const getCardInfo = () => {
+    switch (lowerCaseStatus) {
+      case 'confirmed':
+      case 'active':
+        return {
+          title: 'Booking Confirmed!',
+          message: 'You have a desk reserved for the selected date.',
+          gradient: 'from-blue-500 to-indigo-600',
+        }
+      case 'cancelled':
+        return {
+          title: 'Booking Cancelled',
+          message: 'This booking is no longer active.',
+          gradient: 'from-slate-500 to-slate-600',
+        }
+      case 'checked_in':
+        return {
+          title: 'Checked In!',
+          message: 'You are checked in for this booking.',
+          gradient: 'from-green-500 to-emerald-600',
+        }
+      default:
+        return {
+          title: 'Booking Status',
+          message: `This booking has a status of: ${lowerCaseStatus.replace(
+            '_',
+            ' ',
+          )}`,
+          gradient: 'from-gray-500 to-gray-600',
+        }
+    }
+  }
+
+  const cardInfo = getCardInfo()
 
   if (!booking.desk) {
     return (
@@ -67,30 +120,31 @@ export function BookingConfirmationCard({ booking }: { booking: Booking }) {
   }
 
   return (
-    <div className="mb-8 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-2xl overflow-hidden">
+    <div
+      className={`mb-8 bg-gradient-to-br ${cardInfo.gradient} text-white rounded-2xl shadow-2xl overflow-hidden transition-transform duration-300 hover:-translate-y-1`}
+    >
       <div className="p-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-2xl font-bold">Your Booking is Confirmed!</h3>
+          <h3 className="text-2xl font-bold">{cardInfo.title}</h3>
           <TicketIcon className="h-8 w-8 opacity-75" />
         </div>
-        <p className="mt-1 text-blue-200">
-          You have a desk reserved for the selected date.
-        </p>
+        <p className="mt-1 opacity-80">{cardInfo.message}</p>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-lg">
-          <div className="flex items-center gap-3">
-            <MapPinIcon className="h-6 w-6 text-blue-300" />
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
+          <div className="flex items-center gap-4 rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+            <MapPinIcon className="h-8 w-8 flex-shrink-0 opacity-75" />
             <div>
-              <span className="text-blue-200 text-sm">Desk / Floor</span>
-              <p className="font-bold">
-                {booking.desk.id} / {booking.desk.floor?.floor_name}
+              <span className="opacity-80 text-sm">Location</span>
+              <p className="font-bold leading-tight">
+                Floor {booking.desk.floorId}: {booking.desk.floor?.floor_name}
               </p>
+              <p className="opacity-90">Desk {booking.desk.id}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <CalendarDaysIcon className="h-6 w-6 text-blue-300" />
+          <div className="flex items-center gap-4 rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+            <CalendarDaysIcon className="h-8 w-8 flex-shrink-0 opacity-75" />
             <div>
-              <span className="text-blue-200 text-sm">Date</span>
+              <span className="opacity-80 text-sm">Date</span>
               <p className="font-bold">
                 {new Date(booking.booking_date).toLocaleDateString(undefined, {
                   year: 'numeric',
@@ -103,7 +157,7 @@ export function BookingConfirmationCard({ booking }: { booking: Booking }) {
           </div>
         </div>
       </div>
-      <div className="px-6 py-4 bg-black/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 bg-black/20 px-6 py-4 backdrop-blur-sm sm:flex-row">
         <Link
           to="/floor/$floorId"
           params={{ floorId: booking.desk.floorId.toString() }}
@@ -112,15 +166,14 @@ export function BookingConfirmationCard({ booking }: { booking: Booking }) {
         >
           View on Floor Plan &rarr;
         </Link>
-        {canCancel && (
-          <button
-            onClick={handleCancel}
-            disabled={isCancelling}
-            className="px-4 py-2 font-bold text-red-600 bg-white rounded-lg hover:bg-red-50 focus:ring-4 focus:ring-red-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
-          >
-            {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
-          </button>
-        )}
+        <button
+          onClick={handleCancel}
+          disabled={!canCancel || isCancelling}
+          className="px-4 py-2 font-bold text-red-600 bg-white rounded-lg hover:bg-red-50 focus:ring-4 focus:ring-red-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+          title={getCancelTitle()}
+        >
+          {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
+        </button>
       </div>
     </div>
   )

@@ -18,7 +18,7 @@ export function Sidebar() {
   const activeLinkStyles = 'bg-slate-900/50 text-white font-semibold'
 
   return (
-    <aside className="flex h-screen flex-col w-64 bg-slate-800 text-slate-200">
+    <aside className="sticky top-0 flex h-screen flex-col w-64 bg-slate-800 text-slate-200">
       <div className="p-4 border-b border-slate-700">
         <h1 className="text-xl font-bold text-white">MyDesk</h1>
         {user && (

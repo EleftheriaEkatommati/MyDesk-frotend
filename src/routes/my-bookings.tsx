@@ -4,9 +4,10 @@ import {
   useLoaderData,
   useRouter,
 } from '@tanstack/react-router'
-import { getMyBookings, unbookDesk, type Booking } from '../api'
+import { getMyBookings, type Booking, unbookDesk } from '../api'
+import { CalendarDaysIcon, MapPinIcon } from '@heroicons/react/24/solid'
 import { authService, useAuth } from '../auth'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/my-bookings')({
@@ -34,6 +35,45 @@ export const Route = createFileRoute('/my-bookings')({
 function MyBookingsPage() {
   const { bookings } = useLoaderData({ from: '/my-bookings' })
 
+  const groupedBookings = useMemo(() => {
+    const groups: Record<string, Booking[]> = {
+      Active: [],
+      Past: [],
+      Cancelled: [],
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Sort all bookings by date descending first to have a consistent base order
+    const sortedBookings = [...bookings].sort(
+      (a, b) =>
+        new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime(),
+    )
+
+    for (const booking of sortedBookings) {
+      const dateParts = booking.booking_date.split('-').map(Number)
+      const bookingDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2])
+      const isPast = bookingDate < today
+      const status = booking.status.toLowerCase()
+
+      if (status === 'cancelled') {
+        groups.Cancelled.push(booking)
+      } else if (isPast) {
+        groups.Past.push(booking)
+      } else {
+        groups.Active.push(booking)
+      }
+    }
+
+    // Active bookings should be ascending
+    groups.Active.reverse()
+
+    return groups
+  }, [bookings])
+
+  const groupOrder = ['Active', 'Past', 'Cancelled']
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-200">
@@ -46,10 +86,24 @@ function MyBookingsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {bookings.map((booking) => (
-            <BookingCard key={booking.id} booking={booking} />
-          ))}
+        <div className="space-y-12">
+          {groupOrder.map((groupName) => {
+            const groupBookings = groupedBookings[groupName]
+            if (groupBookings.length === 0) return null
+
+            return (
+              <section key={groupName}>
+                <h2 className="text-2xl font-semibold mb-6 pb-2 border-b-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                  {groupName}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {groupBookings.map((booking) => (
+                    <BookingCard key={booking.id} booking={booking} />
+                  ))}
+                </div>
+              </section>
+            )
+          })}
         </div>
       )}
     </div>
@@ -67,9 +121,11 @@ function BookingCard({ booking }: { booking: Booking }) {
       'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
     default: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300',
+    checked_in: 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300',
   }
 
-  const statusStyle = statusStyles[booking.status] || statusStyles.default
+  const lowerCaseStatus = booking.status.toLowerCase()
+  const statusStyle = statusStyles[lowerCaseStatus] || statusStyles.default
 
   const handleCancel = async () => {
     if (!token) return
@@ -93,54 +149,85 @@ function BookingCard({ booking }: { booking: Booking }) {
     }
   }
 
-  // A booking can be cancelled if it is 'confirmed' or 'active' and is for today or a future date.
-  // Using string comparison for 'YYYY-MM-DD' format is safe and avoids timezone issues.
+  // A booking can be cancelled if it is 'confirmed' or 'active'.
+  // Past bookings can also be cancelled, unless they were checked-in or already cancelled.
   const today = new Date()
-  const yyyy = today.getFullYear()
-  const mm = String(today.getMonth() + 1).padStart(2, '0')
-  const dd = String(today.getDate()).padStart(2, '0')
-  const todayStr = `${yyyy}-${mm}-${dd}`
+  today.setHours(0, 0, 0, 0)
+
+  // The booking date is a string 'YYYY-MM-DD'. We need to parse it carefully
+  // to avoid timezone issues.
+  const dateParts = booking.booking_date.split('-').map(Number)
+  const bookingDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2])
+
+  const isPast = bookingDate < today
+  // A booking can be cancelled if it's 'confirmed', or if it's 'active' and not in the past.
   const canCancel =
-    (booking.status === 'confirmed' || booking.status === 'active') &&
-    booking.booking_date >= todayStr
+    lowerCaseStatus === 'confirmed' || (lowerCaseStatus === 'active' && !isPast)
+
+  const getCancelTitle = () => {
+    if (canCancel) {
+      return 'Cancel this booking'
+    }
+    if (lowerCaseStatus === 'cancelled') {
+      return 'This booking has already been cancelled.'
+    }
+    if (lowerCaseStatus === 'checked_in') {
+      return 'This booking has been checked in and cannot be cancelled.'
+    }
+    return 'This booking cannot be cancelled.'
+  }
 
   return (
-    <div className="bg-white dark:bg-slate-800 shadow-lg rounded-xl overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 flex flex-col">
-      <div className="p-6 flex-grow">
-        <div className="flex justify-between items-start mb-2">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Desk{' '}
-            <span className="text-blue-500 dark:text-blue-400">
-              {booking.desk_id}
-            </span>
-          </h2>
+    <div className="flex flex-col overflow-hidden transition-transform duration-300 transform border shadow-lg bg-white dark:bg-slate-800 rounded-2xl hover:-translate-y-1 border-slate-200 dark:border-slate-700">
+      <div className="flex-grow p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            Booking #{booking.id}
+          </h3>
           <span
             className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${statusStyle}`}
           >
-            {booking.status}
+            {lowerCaseStatus.replace('_', ' ')}
           </span>
         </div>
-        <p className="text-gray-600 dark:text-gray-400">
-          Date:{' '}
-          <span className="font-medium text-gray-800 dark:text-gray-200">
-            {new Date(booking.booking_date).toLocaleDateString()}
-          </span>
-        </p>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-500">
-          Booking ID: {booking.id}
-        </p>
+
+        <div className="space-y-4 text-sm">
+          <div className="flex items-start gap-3">
+            <MapPinIcon className="flex-shrink-0 w-5 h-5 mt-0.5 text-slate-400" />
+            <div>
+              <p className="font-semibold text-slate-700 dark:text-slate-300">
+                {booking.desk?.floor?.floor_name ?? 'Unknown Floor'}
+              </p>
+              <p className="text-slate-500 dark:text-slate-400">
+                Desk {booking.desk_id}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <CalendarDaysIcon className="flex-shrink-0 w-5 h-5 mt-0.5 text-slate-400" />
+            <div>
+              <p className="font-semibold text-slate-700 dark:text-slate-300">
+                {new Date(booking.booking_date).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  timeZone: 'UTC',
+                })}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-      {canCancel && (
-        <div className="p-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-200 dark:border-slate-700">
-          <button
-            onClick={handleCancel}
-            disabled={isCancelling}
-            className="w-full px-4 py-2 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
-          </button>
-        </div>
-      )}
+      <div className="p-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-200 dark:border-slate-700">
+        <button
+          onClick={handleCancel}
+          disabled={!canCancel || isCancelling}
+          className="w-full px-4 py-2 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title={getCancelTitle()}
+        >
+          {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
+        </button>
+      </div>
     </div>
   )
 }
