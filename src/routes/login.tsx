@@ -64,7 +64,7 @@ function Login() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+    <div className="flex flex-1 flex-col items-center justify-center">
       <div className="w-full max-w-md p-8 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
         <h2 className="text-3xl font-bold text-center text-slate-800 dark:text-white mb-8">
           Welcome Back
@@ -102,7 +102,7 @@ function Login() {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full px-4 py-2 font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/50 transition-colors"
+              className="w-full px-4 py-2 font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/50 transition-colors dark:bg-blue-500 dark:hover:bg-blue-600"
             >
               Sign In
             </button>

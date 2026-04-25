@@ -57,7 +57,7 @@ function AuthCallback() {
 
   // Display a loading message while the authentication process is in progress.
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+    <div className="flex flex-1 flex-col items-center justify-center">
       <div className="text-center">
         <h2 className="text-2xl font-semibold mb-4">Authenticating...</h2>
         <p className="text-slate-500">Please wait while we sign you in.</p>

@@ -40,7 +40,7 @@ function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
 
   return (
-    <div className="p-4 md:p-8 max-w-2xl mx-auto">
+    <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
           My Profile

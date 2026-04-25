@@ -169,7 +169,7 @@ export function BookingConfirmationCard({ booking }: { booking: Booking }) {
         <button
           onClick={handleCancel}
           disabled={!canCancel || isCancelling}
-          className="px-4 py-2 font-bold text-red-600 bg-white rounded-lg hover:bg-red-50 focus:ring-4 focus:ring-red-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+          className="w-full px-4 py-2 font-bold text-white bg-red-600 rounded-lg sm:w-auto hover:bg-red-700 focus:ring-4 focus:ring-red-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title={getCancelTitle()}
         >
           {isCancelling ? 'Cancelling...' : 'Cancel Booking'}

@@ -60,7 +60,7 @@ function Register() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+    <div className="flex flex-1 flex-col items-center justify-center">
       <div className="w-full max-w-md p-8 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
         <h2 className="text-3xl font-bold text-center text-slate-800 dark:text-white mb-8">
           Create an Account
@@ -113,7 +113,7 @@ function Register() {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full px-4 py-2 font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-500/50 transition-colors"
+              className="w-full px-4 py-2 font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-500/50 transition-colors dark:bg-emerald-500 dark:hover:bg-emerald-600"
             >
               Sign Up
             </button>

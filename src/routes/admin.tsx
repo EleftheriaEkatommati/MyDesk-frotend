@@ -39,7 +39,7 @@ function AdminPage() {
   const [users, setUsers] = useState(loaderData.users)
 
   return (
-    <div className="p-4 md:p-8">
+    <div>
       <h1 className="text-2xl font-bold mb-6">Admin - User Management</h1>
       <div className="mt-8 overflow-x-auto">
         <h2 className="text-xl font-semibold mb-4">All Users</h2>
@@ -62,14 +62,25 @@ function AdminPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
-              {users.map((user) => (
-                <UserRow
-                  key={user.id}
-                  user={user}
-                  users={users}
-                  setUsers={setUsers}
-                />
-              ))}
+              {users.length > 0 ? (
+                users.map((user) => (
+                  <UserRow
+                    key={user.id}
+                    user={user}
+                    users={users}
+                    setUsers={setUsers}
+                  />
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-6 py-12 text-center text-slate-500"
+                  >
+                    No users found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -113,8 +124,8 @@ function UserRow({
                 name: newRole,
               },
             }
-          : u
-      )
+          : u,
+      ),
     )
 
     try {
@@ -154,15 +165,13 @@ function UserRow({
         <div className="text-gray-500">{user.email}</div>
       </td>
 
-      <td className="px-6 py-4">
-        {user.role?.name}
-      </td>
+      <td className="px-6 py-4">{user.role?.name}</td>
 
       <td className="px-6 py-4 flex gap-3">
         {user.role?.name === 'user' ? (
           <button
             onClick={() => handleRoleChange('admin')}
-            className="text-indigo-600"
+            className="text-indigo-600 hover:underline dark:text-indigo-400"
           >
             Make Admin
           </button>
@@ -170,7 +179,7 @@ function UserRow({
           <button
             onClick={() => handleRoleChange('user')}
             disabled={auth.user?.id === user.id}
-            className="text-yellow-600 disabled:opacity-50"
+            className="text-yellow-600 hover:underline disabled:opacity-50 dark:text-yellow-500"
           >
             Make User
           </button>
@@ -178,7 +187,7 @@ function UserRow({
 
         <button
           onClick={handleDelete}
-          className="text-red-600 ml-3"
+          className="ml-3 text-red-600 hover:underline dark:text-red-400"
         >
           Delete
         </button>

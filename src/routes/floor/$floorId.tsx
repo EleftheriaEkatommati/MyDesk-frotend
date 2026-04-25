@@ -81,25 +81,21 @@ function FloorDetail() {
     if (!users) return null
     return new Map(users.map((u) => [u.id, u]))
   }, [users])
-  console.log("Status of myBooking:", myBooking?.status)
+  console.log('Status of myBooking:', myBooking?.status)
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">
-        {floor.floor_name}
-      </h2>
-     
+    <div>
+      <h2 className="text-2xl font-bold mb-4">{floor.floor_name}</h2>
+
       {/* --- Booking Confirmation Card --- */}
-      {myBooking && (
-        <BookingConfirmationCard booking={myBooking} />
-      )}
+      {myBooking && <BookingConfirmationCard booking={myBooking} />}
 
       <FloorRenderer
-          desks={desks}
-          setDesks={setDesks}
-          date={date}
-          floorId={floor.id}
-          userMap={userMap}
-        />
+        desks={desks}
+        setDesks={setDesks}
+        date={date}
+        floorId={floor.id}
+        userMap={userMap}
+      />
     </div>
   )
 }

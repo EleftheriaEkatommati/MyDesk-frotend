@@ -19,7 +19,7 @@ export const Route = createFileRoute('/settings')({
 
 function Settings() {
   return (
-    <div className="p-2">
+    <div>
       <h2 className="text-2xl font-bold">Settings</h2>
     </div>
   )

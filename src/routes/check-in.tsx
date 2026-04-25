@@ -103,16 +103,20 @@ function CheckInPage() {
   }, [token])
 
   return (
-    <div className="p-6 relative">
-      <h1 className="text-xl font-bold mb-4">QR Check-In</h1>
-      <div id="reader" className="max-w-md mx-auto" />
+    <div className="flex flex-1 flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md text-center">
+        <h1 className="text-2xl font-bold mb-6">QR Check-In</h1>
+        <div id="reader" className="w-full overflow-hidden rounded-lg" />
+      </div>
 
       {booking && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-slate-900 text-white rounded-xl p-8 text-center shadow-xl max-w-md w-full border border-slate-700">
+          <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl p-8 text-center shadow-xl max-w-md w-full border border-slate-200 dark:border-slate-700">
             <h2 className="text-2xl font-bold text-green-500 mb-2">Welcome!</h2>
 
-            <p className="text-slate-400 mb-6">Check-in was successful.</p>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">
+              Check-in was successful.
+            </p>
 
             <div className="space-y-2 text-lg">
               <div>
@@ -139,7 +143,7 @@ function CheckInPage() {
 
             <button
               onClick={() => setBooking(null)}
-              className="mt-6 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+              className="mt-6 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
             >
               Close
             </button>

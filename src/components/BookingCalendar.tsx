@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import Calendar from 'react-calendar'
-import 'react-calendar/dist/Calendar.css'
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { BookingConfirmationCard } from './BookingConfirmationCard'
@@ -165,64 +164,106 @@ const BookingCalendar: React.FC = () => {
             Select a Date
           </h3>
           <style>
-            {`
+            {/* 
+              We are defining custom calendar styles here to override the default
+              and provide a consistent look for both light and dark modes.
+            */}
+            {` 
+              /* Base Calendar Styles (Light Mode) */
               .react-calendar {
                 width: 100%;
-                background: #1e293b; /* slate-800 */
-                border: 1px solid #334155; /* slate-700 */
-                border-radius: 0.5rem; /* rounded-lg */
-                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-md */
+                background: white;
+                border: 1px solid #e2e8f0; /* slate-200 */
+                border-radius: 0.75rem;
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
                 font-family: inherit;
+                padding: 0.5rem;
               }
+
               .react-calendar__navigation button {
-                color: #cbd5e1; /* slate-300 */
+                color: #475569; /* slate-600 */
                 min-width: 44px;
                 background: none;
                 font-size: 1rem;
                 margin-top: 8px;
+                font-weight: 600;
+                border-radius: 0.5rem;
               }
+
               .react-calendar__navigation__label {
-                color: white;
+                color: #1e293b; /* slate-800 */
+                font-weight: 700;
               }
+
               .react-calendar__navigation button:enabled:hover,
               .react-calendar__navigation button:enabled:focus {
-                background-color: #334155; /* slate-700 */
+                background-color: #f1f5f9; /* slate-100 */
               }
+
               .react-calendar__month-view__weekdays {
                 text-align: center;
                 text-transform: uppercase;
-                font-weight: bold;
+                font-weight: 600;
                 font-size: 0.75em;
-                color: #94a3b8; /* slate-400 */
+                color: #64748b; /* slate-500 */
+                padding-bottom: 0.5rem;
               }
+
               .react-calendar__tile {
                 max-width: 100%;
                 padding: 10px 6.6667px;
                 background: none;
                 text-align: center;
                 line-height: 16px;
-                border-radius: 0.5rem;
-                color: #e2e8f0; /* slate-200 */
+                border-radius: 0.75rem;
+                color: #334155; /* slate-700 */
               }
-                .react-calendar__tile:disabled {
-                  color: #475569; /* slate-600 */
-                  background-color: transparent;
-                }
-                .react-calendar__tile:enabled:hover,
-                .react-calendar__tile:enabled:focus {
-                  background-color: #334155; /* slate-700 */
-                }
-                .react-calendar__tile--now {
-                  background: #0c4a6e; /* sky-900 */
+
+              .react-calendar__tile:disabled {
+                color: #cbd5e1; /* slate-300 */
+                background-color: transparent;
+              }
+
+              .react-calendar__tile:enabled:hover,
+              .react-calendar__tile:enabled:focus {
+                background-color: #f1f5f9; /* slate-100 */
+              }
+
+              .react-calendar__tile--now {
+                background: #bfdbfe; /* blue-200 */
                 font-weight: bold;
-                }
-                .react-calendar__tile--active {
-                  background: #2563eb; /* blue-600 */
+                color: #1e3a8a; /* blue-900 */
+              }
+
+              .react-calendar__tile--active {
+                background: #2563eb; /* blue-600 */
                 color: white;
                 font-weight: bold;
+              }
+
+              .react-calendar__month-view__days__day--neighboringMonth {
+                color: #94a3b8; /* slate-400 */
+              }
+
+              /* Dark Mode Overrides */
+              @media (prefers-color-scheme: dark) {
+                .react-calendar {
+                  background: #1e293b; /* slate-800 */
+                  border-color: #334155; /* slate-700 */
                 }
-                .react-calendar__month-view__days__day--neighboringMonth {
-                  color: #64748b; /* slate-500 */
+                .react-calendar__navigation button { color: #cbd5e1; /* slate-300 */ }
+                .react-calendar__navigation__label { color: white; }
+                .react-calendar__navigation button:disabled { color: #475569; /* slate-600 */ }
+                .react-calendar__navigation button:enabled:hover,
+                .react-calendar__navigation button:enabled:focus { background-color: #334155; /* slate-700 */ }
+                .react-calendar__month-view__weekdays { color: #94a3b8; /* slate-400 */ }
+                .react-calendar__tile { color: #e2e8f0; /* slate-200 */ }
+                .react-calendar__tile:disabled { color: #475569; /* slate-600 */ }
+                .react-calendar__tile:enabled:hover,
+                .react-calendar__tile:enabled:focus { background-color: #334155; /* slate-700 */ }
+                .react-calendar__tile--now { background: #0c4a6e; /* sky-900 */ color: #e0f2fe; /* sky-100 */ }
+                .react-calendar__tile--active { background: #2563eb; /* blue-600 */ color: white; }
+                .react-calendar__month-view__days__day--neighboringMonth { color: #64748b; /* slate-500 */ }
               }
             `}
           </style>
@@ -296,7 +337,7 @@ const BookingCalendar: React.FC = () => {
                         handleDeleteFloor(stat.id)
                       }}
                       title="Delete Floor"
-                      className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-sm text-white shadow-md transition-colors hover:bg-red-700"
+                      className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-sm text-white shadow-md transition-colors hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
                     >
                       ✕
                     </button>
@@ -389,7 +430,7 @@ function CreateFloorForm() {
         <button
           type="submit"
           disabled={isCreating}
-          className="px-4 py-2 font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+          className="w-full px-4 py-2 font-bold text-white bg-indigo-600 rounded-lg sm:w-auto hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-500 dark:hover:bg-indigo-600"
         >
           {isCreating ? 'Creating...' : 'Create Floor'}
         </button>

@@ -387,7 +387,7 @@ export function FloorRenderer({
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
                     title="Delete desk"
-                    className="absolute -top-3 -right-3 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-md text-sm"
+                    className="absolute -top-3 -right-3 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-sm text-white shadow-md transition-colors hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
                   >
                     ✕
                   </button>
@@ -399,7 +399,7 @@ export function FloorRenderer({
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
                     title="Rotate desk"
-                    className="absolute top-1/2 -right-10 -translate-y-1/2 bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors shadow-md text-lg"
+                    className="absolute top-1/2 -right-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-blue-500 text-lg text-white shadow-md transition-colors hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
                   >
                     ⟳
                   </button>
@@ -415,8 +415,8 @@ export function FloorRenderer({
         {/* Available */}
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-center">
-            <div className="w-8 h-5 bg-emerald-100 border-2 border-emerald-400 rounded-sm" />
-            <div className="w-4 h-2 bg-emerald-50 rounded-b-full mt-[2px]" />
+            <div className="w-8 h-5 bg-emerald-100 dark:bg-emerald-900/50 border-2 border-emerald-300 dark:border-emerald-700 rounded-sm" />
+            <div className="w-4 h-2 bg-emerald-200 dark:bg-emerald-800 rounded-b-full mt-[2px]" />
           </div>
           <span className="font-semibold text-slate-700 dark:text-slate-300">
             Available
@@ -426,8 +426,8 @@ export function FloorRenderer({
         {/* Booked */}
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-center">
-            <div className="w-8 h-5 bg-red-200 border-2 border-red-400 rounded-sm" />
-            <div className="w-4 h-2 bg-red-400 rounded-b-full mt-[2px]" />
+            <div className="w-8 h-5 bg-rose-100 dark:bg-rose-900/50 border-2 border-rose-300 dark:border-rose-700 rounded-sm" />
+            <div className="w-4 h-2 bg-rose-200 dark:bg-rose-800 rounded-b-full mt-[2px]" />
           </div>
           <span className="font-semibold text-slate-700 dark:text-slate-300">
             Booked
@@ -437,8 +437,8 @@ export function FloorRenderer({
         {/* Yours */}
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-center">
-            <div className="w-8 h-5 bg-blue-200 border-2 border-blue-400 rounded-sm" />
-            <div className="w-4 h-2 bg-blue-400 rounded-b-full mt-[2px]" />
+            <div className="w-8 h-5 bg-sky-100 dark:bg-sky-900/50 border-2 border-sky-300 dark:border-sky-700 rounded-sm" />
+            <div className="w-4 h-2 bg-sky-200 dark:bg-sky-800 rounded-b-full mt-[2px]" />
           </div>
           <span className="font-semibold text-slate-700 dark:text-slate-300">
             Booked by you
@@ -470,7 +470,7 @@ export function FloorRenderer({
                   <td className="px-4 py-2">
                     <button
                       onClick={() => handleDeleteBooking(b.id)}
-                      className="text-red-600 hover:underline"
+                      className="text-red-600 hover:underline dark:text-red-400"
                     >
                       Delete
                     </button>
