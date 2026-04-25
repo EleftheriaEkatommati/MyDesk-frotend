@@ -1,20 +1,18 @@
 import { useAuth } from '../auth'
 import {
   bookDesk,
-  updateDesk,
-  deleteDesk,
   createDesk,
+  deleteBooking,
+  deleteDesk,
+  getAttendance,
+  updateDesk,
   type DeskCreatePayload,
 } from '../api'
-import type { Desk, User } from '../api'
+import type { Booking, Desk, User } from '../api'
 import { FLOOR_CONTAINER } from '../floorTheme'
-import { useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { useEffect } from 'react'
-import type { Booking } from '../api'
-import { deleteBooking } from '../api'
-type Mode = 'view' | 'book' | 'admin'
 
 type Props = {
   desks: Desk[]
@@ -33,6 +31,25 @@ export function FloorRenderer({
 }: Props) {
   const { user, token } = useAuth()
   const queryClient = useQueryClient()
+
+  // Fetch attendance data to get booking statuses, which might not be reflected in desk.isBooked (e.g., for 'CHECKED_IN' status)
+  const { data: attendance } = useQuery({
+    queryKey: ['attendance', date, floorId],
+    queryFn: () => getAttendance(token!, date, floorId),
+    enabled: !!token && !!floorId,
+  })
+
+  const bookingStatusMap = useMemo(() => {
+    const map = new Map<number, string>()
+    if (attendance) {
+      for (const booking of attendance) {
+        if (booking.desk_id) {
+          map.set(booking.desk_id, booking.status)
+        }
+      }
+    }
+    return map
+  }, [attendance])
   const role = user?.role?.name
   const [hoverCell, setHoverCell] = useState<{ x: number; y: number } | null>(
     null,
@@ -47,24 +64,6 @@ export function FloorRenderer({
   const canBook = !!user
   const DESK_W = 64
   const DESK_H = 40
-
-  //Booking state for UI updates
-  const [bookings, setBookings] = useState<Booking[]>([])
-
-  const extractBookings = (desks: Desk[], date: string): Booking[] => {
-    return desks
-      .filter((d) => d.bookingId)
-      .map((d) => ({
-        id: d.bookingId!,
-        desk_id: d.id,
-        user_id: Number(d.bookedBy),
-        booking_date: date,
-        status: 'active',
-      }))
-  }
-  useEffect(() => {
-    setBookings(extractBookings(desks, date))
-  }, [desks, date])
 
   // ---------------- COLLISION ----------------
   const isColliding = (id: number, x: number, y: number, desks: Desk[]) => {
@@ -200,6 +199,9 @@ export function FloorRenderer({
 
     try {
       await deleteBooking(bookingId, token)
+      queryClient.invalidateQueries({
+        queryKey: ['attendance', date, floorId],
+      })
     } catch {
       setDesks(prev)
     }
@@ -310,9 +312,15 @@ export function FloorRenderer({
           </div>
         )}
         {desks.map((desk) => {
-          const isBookedByOther = desk.isBooked && desk.bookedBy !== user?.id
+          const bookingStatus = bookingStatusMap.get(desk.id)
+          // A desk is considered booked if the API says so, or if its booking status is 'checked_in'.
+          // This ensures checked-in desks still appear as booked.
+          const isConsideredBooked =
+            desk.isBooked || bookingStatus === 'CHECKED_IN'
 
-          const isBookedByYou = desk.isBooked && desk.bookedBy === user?.id
+          const isBookedByOther =
+            isConsideredBooked && desk.bookedBy !== user?.id
+          const isBookedByYou = isConsideredBooked && desk.bookedBy === user?.id
 
           return (
             <div
@@ -355,12 +363,16 @@ export function FloorRenderer({
                       ${
                         isBookedByYou
                           ? 'bg-sky-50 border-sky-300 text-sky-700 dark:bg-sky-900/30 dark:border-sky-700 dark:text-sky-300'
-                          : desk.isBooked
+                          : isConsideredBooked
                             ? 'bg-rose-50 border-rose-300 text-rose-700 dark:bg-rose-900/30 dark:border-rose-700 dark:text-rose-300'
                             : 'bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300'
                       }`}
                   >
-                    {isBookedByYou ? 'You' : desk.isBooked ? 'Booked' : desk.id}
+                    {isBookedByYou
+                      ? 'You'
+                      : isConsideredBooked
+                        ? 'Booked'
+                        : desk.id}
                   </div>
 
                   {/* CHAIR */}
@@ -369,7 +381,7 @@ export function FloorRenderer({
                      ${
                        isBookedByYou
                          ? 'bg-sky-300 dark:bg-sky-700'
-                         : desk.isBooked
+                         : isConsideredBooked
                            ? 'bg-rose-300 dark:bg-rose-700'
                            : 'bg-emerald-300 dark:bg-emerald-700'
                      }`}
@@ -460,7 +472,7 @@ export function FloorRenderer({
             </thead>
 
             <tbody>
-              {bookings.map((b) => (
+              {(attendance ?? []).map((b) => (
                 <tr key={b.id} className="border-b">
                   <td className="px-4 py-2">{b.id}</td>
                   <td className="px-4 py-2">{b.desk_id}</td>
