@@ -2,7 +2,8 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { Html5Qrcode } from 'html5-qrcode'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { useAuth, authService } from '../auth'
+import { authService, useAuth } from '../auth'
+import { checkInBooking } from '../api'
 
 export const Route = createFileRoute('/check-in')({
   beforeLoad: async ({ context }) => {
@@ -28,48 +29,47 @@ function CheckInPage() {
   useEffect(() => {
     if (!token) return
 
-    // Initialize scanner only once
+    let isSubscribed = true
+    // Create instance inside effect so it's tied to this render
     const scanner = new Html5Qrcode('reader')
-    scannerRef.current = scanner
 
     const startScanner = async () => {
       try {
+        // SMALL DELAY: Give the previous 'stop()' a millisecond to breathe
+        await new Promise((r) => setTimeout(r, 100))
+
+        if (!isSubscribed) return
+
+        // STAGING: Ensure the div is truly empty before the library touches it
+        const container = document.getElementById('reader')
+        if (container) container.innerHTML = ''
+
         await scanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           async (decodedText) => {
             const now = Date.now()
+
             const lastTime = lastScanMap.current.get(decodedText)
 
             // Prevent scanning the same QR code within the cooldown period
+
             if (lastTime && now - lastTime < COOLDOWN_MS) return
 
             // prevent concurrent scans
+
             if (scanLockRef.current) return
 
             lastScanMap.current.set(decodedText, now)
+
             scanLockRef.current = true
 
             try {
-              const res = await fetch(
-                'http://localhost:8000/api/v1/bookings/check-in',
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                  },
-                  body: JSON.stringify({ qr_data: decodedText }),
-                },
-              )
+              // Use the new API client function for the check-in
+              const data = await checkInBooking(decodedText, token)
 
-              if (!res.ok) {
-                const err = await res.json().catch(() => ({}))
-                throw new Error(err.detail || 'Check-in failed')
-              }
-
-              const data = await res.json()
               setBooking(data) // Show the success modal
+
               toast.success('Checked in successfully!')
             } catch (err) {
               toast.error(
@@ -81,19 +81,23 @@ function CheckInPage() {
           },
         )
       } catch (err) {
-        console.error('Failed to start scanner:', err)
-        toast.error(
-          'Could not start QR scanner. Please check camera permissions.',
-        )
+        // If we get "WorkInProgressError", it confirms the race condition
+        if (isSubscribed) console.warn('Scanner start skipped:', err)
       }
     }
 
     startScanner()
 
     return () => {
-      const scannerInstance = scannerRef.current
-      if (scannerInstance && scannerInstance.isScanning) {
-        scannerInstance.stop().catch(console.error)
+      isSubscribed = false
+      // Most important: Use a synchronous check to stop if possible
+      if (scanner.isScanning) {
+        scanner
+          .stop()
+          .then(() => {
+            scanner.clear()
+          })
+          .catch((err) => console.error('Failed to stop', err))
       }
     }
   }, [token])
@@ -128,7 +132,7 @@ function CheckInPage() {
               <div>
                 🏢 <span className="font-bold text-slate-300">Floor:</span>{' '}
                 <span className="text-purple-400 font-semibold">
-                  {booking.desk?.floor_entity?.name}
+                  {booking.desk?.floor_entity?.floorName}
                 </span>
               </div>
             </div>
