@@ -288,6 +288,31 @@ export async function getMyBookings(
   return res.json()
 }
 
+/**
+ * Checks in a booking using the data from a QR code.
+ * @param qrData The raw string data from the QR code (e.g., "BOOKING_ID:123").
+ * @param token The admin user's authentication token.
+ * @returns A promise that resolves to the updated Booking object with a "CHECKED_IN" status.
+ */
+export async function checkInBooking(
+  qrData: string,
+  token: string,
+): Promise<Booking> {
+  const res = await fetch(`${API_BASE}/bookings/check-in`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ qr_data: qrData }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.detail || 'Failed to check in booking')
+  }
+  return res.json()
+}
+
 // Admin functions
 
 /**
