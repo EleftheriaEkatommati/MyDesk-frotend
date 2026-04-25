@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import BookingCalendar from '../components/BookingCalendar'
-import { authService } from '../auth'
+import { authService, useAuth } from '../auth'
 
 export const Route = createFileRoute('/')({
   beforeLoad: async ({ context, location }) => {
@@ -22,9 +22,17 @@ export const Route = createFileRoute('/')({
 })
 
 function Index() {
+  const { user } = useAuth()
   return (
-    <div>
-      <h3>Welcome Home!</h3>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">
+          Welcome back, {user?.name}!
+        </h1>
+        <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
+          Here's what's happening in your office today.
+        </p>
+      </div>
       <BookingCalendar />
     </div>
   )

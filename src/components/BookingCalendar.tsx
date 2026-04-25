@@ -9,6 +9,7 @@ import {
   XCircleIcon,
   Squares2X2Icon,
   CheckIcon,
+  UserGroupIcon,
   UserIcon,
 } from '@heroicons/react/24/solid'
 import {
@@ -105,6 +106,7 @@ const BookingCalendar: React.FC = () => {
   const totalDesks = floorStats.reduce((sum, stat) => sum + stat.total, 0)
   const bookedDesks = floorStats.reduce((sum, stat) => sum + stat.booked, 0)
   const occupancyRate = totalDesks > 0 ? (bookedDesks / totalDesks) * 100 : 0
+  const availableDesks = totalDesks - bookedDesks
 
   const handleDeleteFloor = async (floorId: number) => {
     if (!token || !isAdmin) return
@@ -129,39 +131,69 @@ const BookingCalendar: React.FC = () => {
   }
 
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-slate-200">
-        Availability and Booking Calendar
-      </h2>
-
+    <div className="space-y-8">
       {isAdmin && <CreateFloorForm />}
       {/* --- Booking Confirmation Card --- */}
       {myBooking && <BookingConfirmationCard booking={myBooking} />}
 
-      <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-        <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Total Desks
-          </p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {totalDesks}
-          </p>
+      {/* --- Stats --- */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        {/* Total Desks */}
+        <div className="overflow-hidden rounded-lg bg-white dark:bg-slate-800 px-4 py-5 shadow-sm border border-slate-200 dark:border-slate-700 sm:p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <Squares2X2Icon
+                className="h-8 w-8 text-slate-400"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="ml-5 w-0 flex-1">
+              <dt className="truncate text-sm font-medium text-slate-500 dark:text-slate-400">
+                Total Desks
+              </dt>
+              <dd className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                {totalDesks}
+              </dd>
+            </div>
+          </div>
         </div>
-        <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Booked Desks
-          </p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {bookedDesks}
-          </p>
+        {/* Booked Desks */}
+        <div className="overflow-hidden rounded-lg bg-white dark:bg-slate-800 px-4 py-5 shadow-sm border border-slate-200 dark:border-slate-700 sm:p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <UserGroupIcon
+                className="h-8 w-8 text-slate-400"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="ml-5 w-0 flex-1">
+              <dt className="truncate text-sm font-medium text-slate-500 dark:text-slate-400">
+                Booked Desks
+              </dt>
+              <dd className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                {bookedDesks}
+              </dd>
+            </div>
+          </div>
         </div>
-        <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg shadow">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Occupancy Rate
-          </p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {occupancyRate.toFixed(1)}%
-          </p>
+        {/* Available Desks */}
+        <div className="overflow-hidden rounded-lg bg-white dark:bg-slate-800 px-4 py-5 shadow-sm border border-slate-200 dark:border-slate-700 sm:p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <CheckCircleIcon
+                className="h-8 w-8 text-green-500"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="ml-5 w-0 flex-1">
+              <dt className="truncate text-sm font-medium text-slate-500 dark:text-slate-400">
+                Available Desks
+              </dt>
+              <dd className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                {availableDesks}
+              </dd>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -312,24 +344,24 @@ const BookingCalendar: React.FC = () => {
                       <h4 className="font-bold text-lg">{stat.floor_name}</h4>
                       <Icon className="h-6 w-6" />
                     </div>
-                    <div className="text-sm space-y-2 bg-white/10 rounded-md p-3 backdrop-blur-sm">
+                    <div className="text-base space-y-2 bg-white/10 rounded-md p-3 backdrop-blur-sm">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Squares2X2Icon className="h-4 w-4" />
+                          <Squares2X2Icon className="h-5 w-5" />
                           <span className="font-semibold">Total:</span>
                         </div>
                         <span className="font-bold">{stat.total}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <CheckIcon className="h-4 w-4" />
+                          <CheckIcon className="h-5 w-5" />
                           <span className="font-semibold">Available:</span>
                         </div>
                         <span className="font-bold">{stat.available}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <UserIcon className="h-4 w-4" />
+                          <UserIcon className="h-5 w-5" />
                           <span className="font-semibold">Booked:</span>
                         </div>
                         <span className="font-bold">{stat.booked}</span>
@@ -344,7 +376,7 @@ const BookingCalendar: React.FC = () => {
                         handleDeleteFloor(stat.id)
                       }}
                       title="Delete Floor"
-                      className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-sm text-white shadow-md transition-colors hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                      className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-sm text-white shadow-md transition-all hover:scale-110 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
                     >
                       ✕
                     </button>
@@ -354,30 +386,57 @@ const BookingCalendar: React.FC = () => {
             })}
           </div>
           <div className="mt-8">
-            <h3 className="text-xl font-bold mb-4">
-              Παρουσίες ({selectedDateString})
+            <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
+              Who's In Today ({selectedDateString})
             </h3>
 
-            {attendance?.length === 0 && (
-              <p className="text-slate-400">Δεν υπάρχουν παρουσίες.</p>
+            {attendance?.length === 0 ? (
+              <div className="text-center py-10 px-6 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                <UserIcon className="mx-auto h-12 w-12 text-slate-400" />
+                <h3 className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-200">
+                  No one checked in
+                </h3>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  No one has checked in for this date yet.
+                </p>
+              </div>
+            ) : (
+              <ul
+                role="list"
+                className="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 rounded-lg"
+              >
+                {attendance?.map((b) => (
+                  <li
+                    key={b.id}
+                    className="flex items-center justify-between gap-x-6 p-4"
+                  >
+                    <div className="flex min-w-0 gap-x-4">
+                      <div className="h-10 w-10 flex-shrink-0 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                        <span className="font-bold text-slate-500 dark:text-slate-400">
+                          {b.user?.name?.[0]?.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-auto">
+                        <p className="text-sm font-semibold leading-6 text-slate-900 dark:text-slate-100">
+                          {b.user?.name} {b.user?.surname}
+                        </p>
+                        <p className="mt-1 truncate text-xs leading-5 text-slate-500 dark:text-slate-400">
+                          {b.user?.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="hidden sm:flex sm:flex-col sm:items-end">
+                      <p className="text-sm leading-6 text-slate-900 dark:text-slate-100">
+                        {b.desk?.floor?.floor_name}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                        Desk {b.desk?.id}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
-
-            <div className="space-y-3">
-              {attendance?.map((b) => (
-                <div
-                  key={b.id}
-                  className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-4"
-                >
-                  <div>
-                    👤 {b.user?.name} {b.user?.surname}
-                  </div>
-
-                  <div>🪑 Desk {b.desk?.id}</div>
-
-                  <div>🏢 {b.desk?.floor?.floor_name}</div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
