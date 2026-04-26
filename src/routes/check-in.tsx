@@ -57,7 +57,6 @@ function CheckInPage() {
             if (lastTime && now - lastTime < COOLDOWN_MS) return
 
             // prevent concurrent scans
-
             if (scanLockRef.current) return
 
             lastScanMap.current.set(decodedText, now)
@@ -65,10 +64,9 @@ function CheckInPage() {
             scanLockRef.current = true
 
             try {
-              // Use the new API client function for the check-in
               const data = await checkInBooking(decodedText, token)
 
-              setBooking(data) // Show the success modal
+              setBooking(data) 
 
               toast.success('Checked in successfully!')
             } catch (err) {
@@ -81,7 +79,6 @@ function CheckInPage() {
           },
         )
       } catch (err) {
-        // If we get "WorkInProgressError", it confirms the race condition
         if (isSubscribed) console.warn('Scanner start skipped:', err)
       }
     }
@@ -90,7 +87,6 @@ function CheckInPage() {
 
     return () => {
       isSubscribed = false
-      // Most important: Use a synchronous check to stop if possible
       if (scanner.isScanning) {
         scanner
           .stop()

@@ -17,7 +17,6 @@ import { deleteUser } from '../api'
 import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/admin')({
-  // 1. Loader για τη λήψη δεδομένων και την προστασία της διαδρομής
   loader: async ({ context }) => {
     await context.auth.ensureLoaded()
     const authState = authService.getState()

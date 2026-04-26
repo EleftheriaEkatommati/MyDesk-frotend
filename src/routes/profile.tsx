@@ -10,7 +10,7 @@ import { type User, updateUserProfile } from '../api'
 import { authService } from '../auth'
 
 export const Route = createFileRoute('/profile')({
-  // 1. Loader to fetch user data and protect the route
+  // Loader to fetch user data and protect the route
   loader: async ({ context }) => {
     await context.auth.ensureLoaded()
     const authState = authService.getState()
@@ -30,12 +30,12 @@ export const Route = createFileRoute('/profile')({
     // so we can just return it.
     return { user: authState.user }
   },
-  // 2. Component to render the page
+  // Component to render the page
   component: ProfilePage,
 })
 
 function ProfilePage() {
-  // 3. Get user data from the loader
+  //Get user data from the loader
   const { user } = useLoaderData({ from: '/profile' })
   const [isEditing, setIsEditing] = useState(false)
 
@@ -166,8 +166,6 @@ function ProfileForm({
         <button
           type="submit"
           className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          // FIXME: The backend endpoint for updating a user profile does not exist.
-          // Disabling this feature until the API is implemented.
           disabled={true}
           title="Profile editing is currently disabled."
         >

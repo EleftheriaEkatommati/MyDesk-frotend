@@ -4,7 +4,6 @@ export type Booking = {
   user_id: number
   booking_date: string
   status: string
-  // Backend now includes the full desk and user objects for convenience
   desk?: Desk
   user?: User
 }
@@ -44,7 +43,7 @@ export type Floor = {
 }
 
 export type User = {
-  id: number // NOTE: Changed from string as admin/user endpoints return numeric IDs.
+  id: number
   name: string
   email: string
   surname?: string | null
@@ -76,9 +75,6 @@ export type FloorCreate = {
   floorName?: string
 }
 
-// The AuthUser was problematic as it mixed two different data shapes.
-// The login function will now return the direct AuthResponse.
-// The application logic can then use the token from AuthResponse to fetch the full user profile if needed.
 export type AuthUser = User & {
   token: string
 }
@@ -136,7 +132,6 @@ export async function getDesks(date: string): Promise<Desk[]> {
   )
 }
 
-// New more specific functions
 export async function getFloor(floorId: number): Promise<Floor> {
   const res = await fetch(`${API_BASE}/desks/floors/${floorId}`)
   if (!res.ok) {
@@ -187,7 +182,6 @@ export async function login(
 }
 
 export async function getCurrentUser(token: string): Promise<User | null> {
-  // Path updated based on user's documentation
   const res = await fetch(`${API_BASE}/auth/me/profile`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -442,8 +436,6 @@ export async function registerUser(
     body: JSON.stringify(userData),
   })
   if (!res.ok) {
-    // The backend should return a specific error message.
-    // For example, a 409 Conflict with a JSON body like { "detail": "Email already registered" }
     const error = await res.json().catch(() => ({}))
     throw new Error(error.detail || 'Registration failed')
   }
@@ -484,7 +476,7 @@ export async function createDesk(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data), // The payload must not include an id.
+    body: JSON.stringify(data),
   })
   if (!res.ok) {
     throw new Error('Failed to create desk')
@@ -552,7 +544,6 @@ export async function deleteFloor(
     },
   })
   if (!res.ok) {
-    // Try to get error detail, but don't fail if the body is empty
     const error = await res.json().catch(() => ({}))
     throw new Error(error.detail || `Failed to delete floor ${floorId}`)
   }
