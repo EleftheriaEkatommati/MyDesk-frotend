@@ -20,6 +20,7 @@ type Props = {
   date: string
   floorId?: number
   userMap?: Map<number, User> | null
+  myBooking?: Booking | null
 }
 
 export function FloorRenderer({
@@ -28,6 +29,7 @@ export function FloorRenderer({
   date,
   floorId,
   userMap,
+  myBooking,
 }: Props) {
   const { user, token } = useAuth()
   const queryClient = useQueryClient()
@@ -91,6 +93,10 @@ export function FloorRenderer({
   const DESK_W = 64
   const DESK_H = 40
 
+  const userHasActiveBooking =
+    myBooking &&
+    (myBooking.status === 'ACTIVE' || myBooking.status === 'CHECKED_IN')
+
   // ---------------- COLLISION ----------------
   const isColliding = (id: number, x: number, y: number, desks: Desk[]) => {
     return desks.some((d) => {
@@ -107,6 +113,22 @@ export function FloorRenderer({
   // ---------------- BOOK ----------------
   const handleBook = async (desk: Desk) => {
     if (!canBook || !user || !token) return
+
+    // If user clicks their own desk, do nothing but show info.
+    if (desk.isBooked && desk.bookedBy === user.id) {
+      toast.success('This is your current booking.')
+      return
+    }
+
+    // If user has a booking and clicks another available desk.
+    if (userHasActiveBooking) {
+      const statusText =
+        myBooking.status === 'CHECKED_IN' ? 'checked in to' : 'booked'
+      toast.error(
+        `You are already ${statusText} desk ${myBooking.desk_id} on this date. Please cancel your booking to book another desk.`,
+      )
+      return
+    }
 
     const isBookedByOther = desk.isBooked && desk.bookedBy !== Number(user.id)
     if (isBookedByOther) return
@@ -317,6 +339,20 @@ export function FloorRenderer({
   // ================== RENDER ==================
   return (
     <>
+      {userHasActiveBooking && (
+        <div className="mb-4 p-4 text-center bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 w-full max-w-2xl">
+          <p className="font-semibold text-blue-800 dark:text-blue-200">
+            You are already{' '}
+            {myBooking.status === 'CHECKED_IN' ? 'checked in for' : 'booked on'}{' '}
+            this date.
+          </p>
+          <p className="text-sm text-blue-600 dark:text-blue-400">
+            To book a different desk, you must first cancel your existing
+            booking.
+          </p>
+        </div>
+      )}
+
       {/* FLOOR */}
       <div
         className={`${FLOOR_CONTAINER} relative`}
@@ -347,6 +383,20 @@ export function FloorRenderer({
           const isBookedByOther =
             isConsideredBooked && desk.bookedBy !== user?.id
           const isBookedByYou = isConsideredBooked && desk.bookedBy === user?.id
+          const isDisabled =
+            (isBookedByOther && canBook) ||
+            (userHasActiveBooking && !isBookedByYou)
+
+          const getDisabledTitle = () => {
+            if (isBookedByOther) return 'This desk is already booked.'
+            if (userHasActiveBooking && !isBookedByYou) {
+              const statusText =
+                myBooking.status === 'CHECKED_IN' ? 'checked in' : 'booked'
+              return `You already have a ${statusText} desk for this date.`
+            }
+            if (isBookedByYou) return 'This is your booking.'
+            return 'Book this desk'
+          }
 
           return (
             <div
@@ -376,9 +426,10 @@ export function FloorRenderer({
                   onClick={() => {
                     if (canBook) handleBook(desk)
                   }}
-                  disabled={isBookedByOther && canBook}
+                  disabled={isDisabled}
+                  title={getDisabledTitle()}
                   className={`flex flex-col items-center justify-center transition-transform duration-200 group-hover:scale-110 ${
-                    isBookedByOther
+                    isDisabled && !isBookedByYou
                       ? 'cursor-not-allowed opacity-50'
                       : 'cursor-pointer'
                   }`}

@@ -96,6 +96,7 @@ function FloorDetail() {
           date={date}
           floorId={floor.id}
           userMap={userMap}
+          myBooking={myBooking}
         />
       </div>
     </div>

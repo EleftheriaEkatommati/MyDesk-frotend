@@ -4,11 +4,12 @@ import {
   useLoaderData,
   useRouter,
 } from '@tanstack/react-router'
-import { getMyBookings, type Booking, unbookDesk } from '../api'
+import { getFloors, getMyBookings, type Booking, unbookDesk } from '../api'
 import { CalendarDaysIcon, MapPinIcon } from '@heroicons/react/24/solid'
 import { authService, useAuth } from '../auth'
 import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/my-bookings')({
   loader: async ({ context, location }) => {
@@ -42,6 +43,18 @@ export const Route = createFileRoute('/my-bookings')({
 
 function MyBookingsPage() {
   const { bookings } = useLoaderData({ from: '/my-bookings' })
+
+  // Fetch floors to create a lookup map, as the general booking list might not
+  // have the full nested floor data.
+  const { data: floors } = useQuery({
+    queryKey: ['floors'],
+    queryFn: getFloors,
+  })
+
+  const floorMap = useMemo(() => {
+    if (!floors) return new Map<number, string>()
+    return new Map(floors.map((f) => [f.id, f.floorName]))
+  }, [floors])
 
   const groupedBookings = useMemo(() => {
     const groups: Record<string, Booking[]> = {
@@ -108,7 +121,11 @@ function MyBookingsPage() {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {groupBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} />
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      floorMap={floorMap}
+                    />
                   ))}
                 </div>
               </section>
@@ -120,7 +137,13 @@ function MyBookingsPage() {
   )
 }
 
-function BookingCard({ booking }: { booking: Booking }) {
+function BookingCard({
+  booking,
+  floorMap,
+}: {
+  booking: Booking
+  floorMap: Map<number, string>
+}) {
   const { token } = useAuth()
   const router = useRouter()
   const [isCancelling, setIsCancelling] = useState(false)
@@ -136,6 +159,12 @@ function BookingCard({ booking }: { booking: Booking }) {
 
   const lowerCaseStatus = booking.status.toLowerCase()
   const statusStyle = statusStyles[lowerCaseStatus] || statusStyles.default
+
+  // Determine floor name using the map as a fallback.
+  const floorName =
+    booking.desk?.floor?.floorName ??
+    (booking.desk?.floorId ? floorMap.get(booking.desk.floorId) : undefined) ??
+    'Unknown Floor'
 
   const handleCancel = async () => {
     if (!token) return
@@ -206,7 +235,7 @@ function BookingCard({ booking }: { booking: Booking }) {
             <MapPinIcon className="flex-shrink-0 w-5 h-5 mt-0.5 text-slate-400" />
             <div>
               <p className="font-semibold text-slate-700 dark:text-slate-300">
-                {booking.desk?.floor?.floorName ?? 'Unknown Floor'}
+                {floorName}
               </p>
               <p className="text-slate-500 dark:text-slate-400">
                 Desk {booking.desk_id}
