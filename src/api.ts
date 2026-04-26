@@ -9,6 +9,22 @@ export type Booking = {
   user?: User
 }
 
+// New types for the daily report endpoint
+export type BookingStatistics = {
+  total_expected: number
+  checked_in: number
+  pending: number
+  cancelled: number
+  check_in_percentage: number
+}
+
+export type DailyReport = {
+  stats: BookingStatistics
+  checked_in_bookings: Booking[]
+  pending_bookings: Booking[]
+  users_with_no_booking: User[]
+}
+
 export type Desk = {
   id: number
   floorId: number
@@ -23,7 +39,7 @@ export type Desk = {
 
 export type Floor = {
   id: number
-  floor_name: string
+  floorName: string
   floor_number: number
 }
 
@@ -95,10 +111,9 @@ export async function getFloors(): Promise<Floor[]> {
   const res = await fetch(`${API_BASE}/desks/floors`)
   if (!res.ok) throw new Error('Failed to fetch floors')
   const data = await res.json()
-  // Map camelCase from API to snake_case in the frontend type
   return data.map((f: any) => ({
     id: f.id,
-    floor_name: f.floorName,
+    floorName: f.floorName,
     floor_number: f.floorNumber,
   }))
 }
@@ -132,10 +147,9 @@ export async function getFloor(floorId: number): Promise<Floor> {
     throw new Error('Failed to fetch floor')
   }
   const f = await res.json()
-  // Map camelCase from API to snake_case in the frontend type
   return {
     id: f.id,
-    floor_name: f.floorName,
+    floorName: f.floorName,
     floor_number: f.floorNumber,
   }
 }
@@ -288,7 +302,26 @@ export async function getMyBookings(
   return res.json()
 }
 
-
+/**
+ * Fetches all bookings for a specific user. Requires admin privileges.
+ * @param userId The ID of the user whose bookings to fetch.
+ * @param token The admin user's authentication token.
+ * @returns A promise that resolves to an array of Booking objects.
+ */
+export async function getUserBookings(
+  userId: number,
+  token: string,
+): Promise<Booking[]> {
+  const res = await fetch(`${ADMIN_API_BASE}/users/${userId}/bookings`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch bookings for user ${userId}`)
+  }
+  return res.json()
+}
 
 export async function getAttendance(
   token: string,
@@ -312,8 +345,6 @@ export async function getAttendance(
 
   return res.json()
 }
-
-
 
 /**
  * Checks in a booking using the data from a QR code.
@@ -538,4 +569,25 @@ export async function deleteFloor(
     throw new Error(error.detail || `Failed to delete floor ${floorId}`)
   }
   // A 204 response has no body, so we don't return anything.
+}
+
+/**
+ * Fetches the daily booking report for administrators.
+ * @param token The admin's authentication token.
+ * @param date Optional date string in 'YYYY-MM-DD' format. Defaults to today.
+ * @returns A promise that resolves to the DailyReport object.
+ */
+export async function getDailyReport(
+  token: string,
+  date?: string,
+): Promise<DailyReport> {
+  let url = `${API_BASE}/bookings/report/daily`
+  if (date) {
+    url += `?report_date=${date}`
+  }
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error('Failed to fetch daily report')
+  return res.json()
 }
