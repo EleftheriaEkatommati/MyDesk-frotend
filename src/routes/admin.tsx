@@ -21,26 +21,25 @@ export const Route = createFileRoute('/admin')({
   loader: async ({ context }) => {
     await context.auth.ensureLoaded()
     const authState = authService.getState()
-    // Ανακατεύθυνση εάν ο χρήστης δεν είναι συνδεδεμένος ή δεν είναι διαχειριστής
+    // Only allow access if the user is authenticated and has the 'admin' role. Otherwise, redirect to login.
     if (!authState.user || authState.user?.role?.name !== 'admin') {
       throw redirect({
         to: '/login',
         search: {
-          // Ανακατεύθυνση πίσω στη σελίδα admin μετά τη σύνδεση
+          // Redirect back to the admin page after successful login
           redirect: location.href,
         },
       })
     }
-    // Λήψη χρηστών εάν υπάρχει εξουσιοδότηση
+    //  Fetch the list of users for the admin dashboard. This will be passed to the component via useLoaderData.
     const users = await getUsers(authState.token!)
     return { users }
   },
-  // 2. Component για την απόδοση της σελίδας
   component: AdminPage,
 })
 
 function AdminPage() {
-  // 3. Λήψη δεδομένων χρηστών από το loader
+  // Get the initial list of users from the loader data. This is the data that was fetched on the server before rendering the page.
   const loaderData = useLoaderData({ from: '/admin' })
   const [users, setUsers] = useState(loaderData.users)
 
@@ -94,7 +93,7 @@ function AdminPage() {
   )
 }
 
-// Component για μια σειρά χρήστη με λειτουργικότητα ενημέρωσης ρόλου
+// Component for rendering each user row in the admin dashboard. It includes buttons for promoting/demoting user roles and deleting users, with appropriate confirmation and error handling.
 function UserRow({
   user,
   setUsers,

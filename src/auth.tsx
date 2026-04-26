@@ -130,8 +130,6 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
 
-  // Use useMemo to stabilize the returned object, preventing unnecessary re-renders.
-  // The methods from authService are now stable because they are defined as arrow functions.
   return useMemo(
     () => ({
       ...context,

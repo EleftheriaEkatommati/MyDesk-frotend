@@ -318,7 +318,6 @@ export function FloorRenderer({
       }
     }
 
-    // 🔥 DRAGGING FIX
     if (!isAdmin || !draggingId) return
 
     setDidDrag(true)
@@ -531,7 +530,7 @@ export function FloorRenderer({
           )
         })}
       </div>
-      </div> {/* END FLOOR WRAPPER */}
+      </div>
 
       {/* LEGEND */}
       <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:gap-6 bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm w-fit">

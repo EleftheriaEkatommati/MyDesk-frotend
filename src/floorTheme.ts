@@ -4,19 +4,18 @@ import type { Desk } from "../api"
 
 /**
  * Floor container styling (shared base)
- * This is the "ThePlan" visual identity
  */
 export const FLOOR_CLASS =
   "relative w-[800px] h-[600px] border rounded-lg overflow-hidden bg-slate-100"
 
 /**
- * Grid texture overlay (ThePlan signature look)
+ * Grid texture overlay
  */
 export const FLOOR_GRID =
   "bg-[linear-gradient(to_right,#ccc_1px,transparent_1px),linear-gradient(to_bottom,#ccc_1px,transparent_1px)] bg-[size:20px_20px]"
 
 /**
- * Full floor container class (recommended to use everywhere)
+ * Full floor container class
  */
 export const FLOOR_CONTAINER =
   "relative w-[800px] h-[600px] " +
@@ -28,19 +27,19 @@ export const FLOOR_CONTAINER =
   "bg-[size:20px_20px]";
 
 /**
- * Base desk styling (shape + typography + feel)
+ * Base desk styling 
  */
 export const DESK_BASE =
   "w-16 h-10 rounded text-white text-xs flex items-center justify-center shadow transition select-none"
 
 /**
- * Admin desk styling (optional enhancement)
+ * Admin desk styling
  */
 export const DESK_ADMIN =
   "cursor-move hover:scale-[1.02] active:scale-[0.98]"
 
 /**
- * Booking color logic (single source of truth)
+ * Booking color logic
  */
 export function getDeskColor(desk: Desk, userId?: number) {
   const isBookedByOther = desk.isBooked && desk.bookedBy !== userId
@@ -52,7 +51,7 @@ export function getDeskColor(desk: Desk, userId?: number) {
 }
 
 /**
- * Optional: floor status color (used in BookingCalendar)
+ * Floor status color (used in BookingCalendar)
  */
 export function getFloorStatusColor(
   total: number,
@@ -66,7 +65,7 @@ export function getFloorStatusColor(
 }
 
 /**
- * Optional: occupancy percentage helper
+ * Occupancy percentage helper
  */
 export function getOccupancyRate(total: number, booked: number) {
   if (total === 0) return 0

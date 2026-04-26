@@ -105,7 +105,6 @@ const ADMIN_API_BASE = `${API_BASE}/admin`
 // A custom error for 404s to be handled in the loader
 export class NotFoundError extends Error {}
 
-// Existing functions (now hitting an API)
 export async function getFloors(): Promise<Floor[]> {
   // Path updated based on user's documentation
   const res = await fetch(`${API_BASE}/desks/floors`)
@@ -122,7 +121,6 @@ export async function getDesks(date: string): Promise<Desk[]> {
   const res = await fetch(`${API_BASE}/desks?date=${date}`)
   if (!res.ok) throw new Error('Failed to fetch desks')
   const data = await res.json()
-  // Cleaned up mapping. The backend consistently returns snake_case for these fields.
   return data.map(
     (d: any): Desk => ({
       id: d.id,
@@ -154,15 +152,6 @@ export async function getFloor(floorId: number): Promise<Floor> {
   }
 }
 
-/**
- * Updates the current user's profile.
- * @param profileData The data to update.
- * @param token The user's authentication token.
- * @returns A promise that resolves to the updated User object.
- */
-// FIXME: This endpoint does not exist on the backend.
-// The backend has a GET /api/v1/auth/me/profile, but no PUT for updates.
-// This function will fail with a 405 Method Not Allowed error.
 export async function updateUserProfile(
   profileData: UserProfileUpdate,
   token: string,
@@ -228,7 +217,6 @@ export async function getDesksByFloor(
   }
 
   const data = await res.json()
-  // Cleaned up mapping. The backend consistently returns snake_case for these fields.
   return data.map(
     (d: any): Desk => ({
       id: d.id,
@@ -568,7 +556,6 @@ export async function deleteFloor(
     const error = await res.json().catch(() => ({}))
     throw new Error(error.detail || `Failed to delete floor ${floorId}`)
   }
-  // A 204 response has no body, so we don't return anything.
 }
 
 /**

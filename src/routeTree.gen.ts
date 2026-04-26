@@ -9,7 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ThePlanRouteImport } from './routes/the-plan'
+import { Route as StatisticsRouteImport } from './routes/statistics'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -23,9 +23,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as FloorFloorIdRouteImport } from './routes/floor/$floorId'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 
-const ThePlanRoute = ThePlanRouteImport.update({
-  id: '/the-plan',
-  path: '/the-plan',
+const StatisticsRoute = StatisticsRouteImport.update({
+  id: '/statistics',
+  path: '/statistics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -100,7 +100,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
-  '/the-plan': typeof ThePlanRoute
+  '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/floor/$floorId': typeof FloorFloorIdRoute
 }
@@ -115,7 +115,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
-  '/the-plan': typeof ThePlanRoute
+  '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/floor/$floorId': typeof FloorFloorIdRoute
 }
@@ -131,7 +131,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
-  '/the-plan': typeof ThePlanRoute
+  '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/floor/$floorId': typeof FloorFloorIdRoute
 }
@@ -148,7 +148,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/register'
     | '/settings'
-    | '/the-plan'
+    | '/statistics'
     | '/auth/callback'
     | '/floor/$floorId'
   fileRoutesByTo: FileRoutesByTo
@@ -163,7 +163,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/register'
     | '/settings'
-    | '/the-plan'
+    | '/statistics'
     | '/auth/callback'
     | '/floor/$floorId'
   id:
@@ -178,7 +178,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/register'
     | '/settings'
-    | '/the-plan'
+    | '/statistics'
     | '/auth/callback'
     | '/floor/$floorId'
   fileRoutesById: FileRoutesById
@@ -194,18 +194,18 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRoute
-  ThePlanRoute: typeof ThePlanRoute
+  StatisticsRoute: typeof StatisticsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   FloorFloorIdRoute: typeof FloorFloorIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/the-plan': {
-      id: '/the-plan'
-      path: '/the-plan'
-      fullPath: '/the-plan'
-      preLoaderRoute: typeof ThePlanRouteImport
+    '/statistics': {
+      id: '/statistics'
+      path: '/statistics'
+      fullPath: '/statistics'
+      preLoaderRoute: typeof StatisticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -306,7 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRoute,
-  ThePlanRoute: ThePlanRoute,
+  StatisticsRoute: StatisticsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   FloorFloorIdRoute: FloorFloorIdRoute,
 }
