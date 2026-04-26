@@ -62,8 +62,6 @@ function FloorDetail() {
   const { floor, floorDesks, users, date } = Route.useLoaderData()
   const { auth } = Route.useRouteContext()
 
-  const isAdmin = auth.user?.role?.name === 'admin'
-
   const { data: myBookingResult } = useQuery({
     queryKey: ['myBooking', date],
     queryFn: () => getMyBookings(auth.token!, date),
@@ -84,17 +82,17 @@ function FloorDetail() {
   console.log('Status of myBooking:', myBooking?.status)
   return (
     <div className="flex flex-col items-center">
-      <h2 className="text-2xl font-bold mb-4">{floor.floorName}</h2>
+      <h2 className="text-2xl font-bold mb-4">{floor?.floorName}</h2>
 
       {/* --- Booking Confirmation Card --- */}
       {myBooking && <BookingConfirmationCard booking={myBooking} />}
 
-      <div className="w-full overflow-x-auto pb-4 flex flex-col items-center">
+      <div className="w-full pb-4 flex flex-col items-center">
         <FloorRenderer
           desks={desks}
           setDesks={setDesks}
           date={date}
-          floorId={floor.id}
+          floorId={floor?.id}
           userMap={userMap}
           myBooking={myBooking}
         />

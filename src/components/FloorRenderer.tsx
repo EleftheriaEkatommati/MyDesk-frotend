@@ -10,7 +10,7 @@ import {
 } from '../api'
 import type { Booking, Desk, User } from '../api'
 import { FLOOR_CONTAINER } from '../floorTheme'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 
@@ -87,7 +87,30 @@ export function FloorRenderer({
     null,
   )
   const [draggingId, setDraggingId] = useState<number | null>(null)
-  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null)
+  
+  const [scale, setScale] = useState(1)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (wrapperRef.current) {
+        const width = wrapperRef.current.clientWidth
+        // We use Math.min so it doesn't scale *up* beyond 1x on large screens.
+        setScale(Math.min(width / 800, 1))
+      }
+    }
+
+    const observer = new ResizeObserver(updateScale)
+    if (wrapperRef.current) {
+      observer.observe(wrapperRef.current)
+    }
+    
+    // Also run on mount to ensure initial scale is correct
+    updateScale()
+
+    return () => observer.disconnect()
+  }, [])
+
   const isAdmin = role === 'admin'
   const canBook = !!user
   const DESK_W = 64
@@ -178,9 +201,10 @@ export function FloorRenderer({
     if (target.closest('.group')) return
 
     const rect = e.currentTarget.getBoundingClientRect()
+    const scale = rect.width / 800
 
-    const x = Math.round((e.clientX - rect.left) / 20) * 20
-    const y = Math.round((e.clientY - rect.top) / 20) * 20
+    const x = Math.round(((e.clientX - rect.left) / scale) / 20) * 20
+    const y = Math.round(((e.clientY - rect.top) / scale) / 20) * 20
 
     handleAddDesk(x, y)
   }
@@ -275,9 +299,10 @@ export function FloorRenderer({
   // ---------------- DRAG AND MOVE ----------------
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
+    const scale = rect.width / 800
 
-    const rawX = e.clientX - rect.left
-    const rawY = e.clientY - rect.top
+    const rawX = (e.clientX - rect.left) / scale
+    const rawY = (e.clientY - rect.top) / scale
 
     const snappedX = snap(rawX)
     const snappedY = snap(rawY)
@@ -328,11 +353,12 @@ export function FloorRenderer({
 
       try {
         await updateDesk(desk.id, { x: snappedX, y: snappedY }, token)
-      } catch {}
+      } catch (err) {
+        console.error('Failed to update desk', err)
+      }
     }
 
     setDraggingId(null)
-    setDragPos(null)
     setDragStart(null)
   }
 
@@ -353,13 +379,20 @@ export function FloorRenderer({
         </div>
       )}
 
-      {/* FLOOR */}
-      <div
-        className={`${FLOOR_CONTAINER} relative`}
-        onClick={handleFloorClick}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
+      {/* FLOOR WRAPPER */}
+      <div 
+        ref={wrapperRef} 
+        className="w-full max-w-[800px] relative mx-auto" 
+        style={{ height: 600 * scale }}
       >
+        {/* FLOOR */}
+        <div
+          className={`${FLOOR_CONTAINER} absolute top-0 left-0 origin-top-left`}
+          style={{ transform: `scale(${scale})` }}
+          onClick={handleFloorClick}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+        >
         {isAdmin && hoverCell && (
           <div
             className="absolute pointer-events-none z-0"
@@ -498,6 +531,7 @@ export function FloorRenderer({
           )
         })}
       </div>
+      </div> {/* END FLOOR WRAPPER */}
 
       {/* LEGEND */}
       <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:gap-6 bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm w-fit">
