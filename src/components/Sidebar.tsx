@@ -76,7 +76,7 @@ export function Sidebar({
             <HomeIcon className="h-5 w-5" />
             Home
           </Link>
-          {user && (
+          {user && user?.role?.name !== 'admin' && (
             <Link
               to="/my-bookings"
               className={linkStyles}
@@ -87,37 +87,32 @@ export function Sidebar({
             </Link>
           )}
           {user?.role?.name === 'admin' && (
-            <div className="pt-4">
-              <h2 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Admin
-              </h2>
-              <div className="mt-2 space-y-2">
-                <Link
-                  to="/admin"
-                  className={linkStyles}
-                  activeProps={{ className: activeLinkStyles }}
-                >
-                  <UserGroupIcon className="h-5 w-5" />
-                  User Management
-                </Link>
-                <Link
-                  to="/check-in"
-                  className={linkStyles}
-                  activeProps={{ className: activeLinkStyles }}
-                >
-                  <QrCodeIcon className="h-5 w-5" />
-                  Check-In
-                </Link>
-                <Link
-                  to="/statistics"
-                  className={linkStyles}
-                  activeProps={{ className: activeLinkStyles }}
-                >
-                  <ChartBarIcon className="h-5 w-5" />
-                  Statistics
-                </Link>
-              </div>
-            </div>
+            <>
+              <Link
+                to="/admin"
+                className={linkStyles}
+                activeProps={{ className: activeLinkStyles }}
+              >
+                <UserGroupIcon className="h-5 w-5" />
+                User Management
+              </Link>
+              <Link
+                to="/check-in"
+                className={linkStyles}
+                activeProps={{ className: activeLinkStyles }}
+              >
+                <QrCodeIcon className="h-5 w-5" />
+                Check-In
+              </Link>
+              <Link
+                to="/statistics"
+                className={linkStyles}
+                activeProps={{ className: activeLinkStyles }}
+              >
+                <ChartBarIcon className="h-5 w-5" />
+                Statistics
+              </Link>
+            </>
           )}
         </nav>
 

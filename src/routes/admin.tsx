@@ -4,11 +4,20 @@ import {
   useLoaderData,
   useNavigate,
   useRouteContext,
+  Link,
 } from '@tanstack/react-router'
 import React, { useState } from 'react'
+import {
+  ArrowDownCircleIcon,
+  ArrowUpCircleIcon,
+  TrashIcon,
+  ArrowPathIcon,
+  BookmarkSquareIcon,
+} from '@heroicons/react/24/outline'
 import { createUser, getUsers, updateUserRole, type User } from '../api'
 import { authService } from '../auth'
 import { deleteUser } from '../api'
+import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/admin')({
   // 1. Loader για τη λήψη δεδομένων και την προστασία της διαδρομής
@@ -40,21 +49,26 @@ function AdminPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8 text-slate-800 dark:text-slate-200">
-        User Management
-      </h1>
-      <div className="mt-8 overflow-x-auto bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-200">
+          User Management
+        </h1>
+        <button className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+          test
+        </button>
+      </div>
+      <div className="overflow-x-auto bg-white dark:bg-slate-800/75 rounded-xl shadow-lg">
         <div className="align-middle inline-block min-w-full">
           <table className="min-w-full">
-            <thead className="bg-slate-50 dark:bg-slate-700/50">
+            <thead className="bg-slate-100/80 dark:bg-slate-900/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700 dark:text-slate-300 tracking-wide">
                   Actions
                 </th>
               </tr>
@@ -99,70 +113,70 @@ function UserRow({
 }) {
   const { auth } = useRouteContext({ from: '__root__' })
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleRoleChange = async (newRole: 'admin' | 'user') => {
     if (!auth.token || !auth.user) return
 
     if (auth.user.id === user.id && newRole === 'user') {
-      alert('You cannot remove your own admin privileges.')
+      toast.error('You cannot remove your own admin privileges.')
       return
     }
 
-    const prevUsers = [...users]
-    setLoading(true)
-
-    setUsers((p) =>
-      p.map((u) =>
-        u.id === user.id
-          ? {
-              ...u,
-              role: {
-                id: u.role?.id ?? 0, // fallback to something valid
-                name: newRole,
-              },
-            }
-          : u,
-      ),
-    )
+    setIsLoading(true)
 
     try {
-      await updateUserRole(user.id, { role: newRole }, auth.token)
+      const updatedUser = await updateUserRole(
+        user.id,
+        { role: newRole },
+        auth.token,
+      )
+      // On success, update the user in the list with the definitive data from the server.
+      setUsers((p) => p.map((u) => (u.id === user.id ? updatedUser : u)))
+      toast.success(`User ${user.name}'s role updated to ${newRole}.`)
     } catch (error) {
       console.error(error)
-      setUsers(prevUsers)
+      toast.error('Failed to update user role.')
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
   const handleDelete = async () => {
     if (!auth.token) return
-    if (!confirm('Delete this user?')) return
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${user.name}? This action cannot be undone.`,
+      )
+    )
+      return
 
-    const prevUsers = [...users]
-
-    setUsers((p) => p.filter((u) => u.id !== user.id))
+    setIsLoading(true)
 
     try {
       await deleteUser(user.id, auth.token)
+      // On success, remove the user from the list.
+      setUsers((p) => p.filter((u) => u.id !== user.id))
+      toast.success(`User ${user.name} has been deleted.`)
     } catch (error) {
       console.error(error)
-      setUsers(prevUsers)
+      toast.error('Failed to delete user.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
   return (
-    <tr className="hover:bg-gray-50 dark:hover:bg-slate-700">
+    <tr className="transition-colors duration-150 hover:bg-slate-50 dark:hover:bg-slate-700">
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 flex-shrink-0 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-            <span className="font-bold text-slate-500 dark:text-slate-400">
+          <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-100 to-blue-200 dark:from-indigo-800 dark:to-blue-900 flex items-center justify-center">
+            <span className="font-bold text-indigo-600 dark:text-indigo-200">
               {user.name?.[0]?.toUpperCase()}
             </span>
           </div>
           <div>
-            <div className="font-medium text-slate-800 dark:text-slate-200">
+            <div className="font-semibold text-slate-800 dark:text-slate-200">
               {user.name ?? ''} {user.surname ?? ''}
             </div>
             <div className="text-sm text-slate-500 dark:text-slate-400">
@@ -182,29 +196,49 @@ function UserRow({
           {user.role?.name}
         </span>
       </td>
-      <td className="px-6 py-4 flex items-center gap-3">
-        {user.role?.name === 'user' ? (
-          <button
-            onClick={() => handleRoleChange('admin')}
-            className="px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-600 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/50 hover:shadow-sm hover:-translate-y-px transition-all duration-150"
-          >
-            Make Admin
-          </button>
+      <td className="px-6 py-4 flex items-center justify-center gap-2">
+        {isLoading ? (
+          <div className="p-2">
+            <ArrowPathIcon className="h-6 w-6 animate-spin text-slate-400" />
+          </div>
         ) : (
-          <button
-            onClick={() => handleRoleChange('user')}
-            disabled={auth.user?.id === user.id}
-            className="px-3 py-1.5 text-sm font-medium text-yellow-600 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-600 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-900/50 hover:shadow-sm hover:-translate-y-px transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
-          >
-            Make User
-          </button>
+          <>
+            {user.role?.name === 'user' ? (
+              <button
+                onClick={() => handleRoleChange('admin')}
+                title="Promote to Admin"
+                className="p-2 rounded-full text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+              >
+                <ArrowUpCircleIcon className="h-6 w-6" />
+              </button>
+            ) : (
+              <button
+                onClick={() => handleRoleChange('user')}
+                disabled={auth.user?.id === user.id}
+                title="Demote to User"
+                className="p-2 rounded-full text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ArrowDownCircleIcon className="h-6 w-6" />
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              disabled={auth.user?.id === user.id}
+              title="Delete User"
+              className="p-2 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <TrashIcon className="h-6 w-6" />
+            </button>
+            <Link
+              to="/my-bookings"
+              search={{ userId: user.id }}
+              title="View User Bookings"
+              className="p-2 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+            >
+              <BookmarkSquareIcon className="h-6 w-6" />
+            </Link>
+          </>
         )}
-        <button
-          onClick={handleDelete}
-          className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/50 hover:shadow-sm hover:-translate-y-px transition-all duration-150"
-        >
-          Delete
-        </button>
       </td>
     </tr>
   )

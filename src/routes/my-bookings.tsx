@@ -11,7 +11,7 @@ import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
 export const Route = createFileRoute('/my-bookings')({
-  loader: async ({ context }) => {
+  loader: async ({ context, location }) => {
     await context.auth.ensureLoaded()
     const authState = authService.getState()
 
@@ -22,6 +22,14 @@ export const Route = createFileRoute('/my-bookings')({
         search: {
           redirect: location.href,
         },
+      })
+    }
+
+    // If user is an admin, redirect to home, as this page is not for them.
+    if (authState.user.role?.name === 'admin') {
+      throw redirect({
+        to: '/',
+        replace: true,
       })
     }
 
