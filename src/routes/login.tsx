@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useAuth } from '../auth'
+import { ComputerDesktopIcon } from '@heroicons/react/24/outline'
 
 type LoginSearch = {
   redirect?: string
@@ -66,9 +67,19 @@ function Login() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center">
       <div className="w-full max-w-md p-8 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
-        <h2 className="text-3xl font-bold text-center text-slate-800 dark:text-white mb-8">
-          Welcome Back
-        </h2>
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="bg-blue-600 p-2 rounded-lg">
+              <ComputerDesktopIcon className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-slate-800 dark:text-white tracking-tight">
+              MyDesk
+            </h1>
+          </div>
+          <p className="text-slate-500 dark:text-slate-400">
+            Welcome back! Please sign in to continue.
+          </p>
+        </div>
         {error && (
           <div className="mb-4 p-3 text-sm text-red-500 bg-red-100/50 rounded-lg text-center">
             {error}

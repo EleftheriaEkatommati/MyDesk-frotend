@@ -3,6 +3,7 @@ import { useAuth } from '../auth'
 import {
   ArrowLeftOnRectangleIcon,
   BookmarkSquareIcon,
+  ComputerDesktopIcon,
   HomeIcon,
   ChartBarIcon,
   QrCodeIcon,
@@ -34,7 +35,8 @@ export function Sidebar({
     text-slate-300 hover:text-white hover:bg-slate-700
     transition-colors duration-200 text-sm font-medium
   `
-  const activeLinkStyles = 'bg-slate-900 text-white'
+  const activeLinkStyles =
+    'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
 
   return (
     <>
@@ -51,18 +53,11 @@ export function Sidebar({
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center gap-3 p-4 border-b border-slate-700">
-          <div className="bg-blue-600 p-2 rounded-lg">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-6 h-6 text-white"
-            >
-              <path d="M11.25 3.001H12.75V6.001H11.25V3.001ZM11.25 8.251H12.75V17.251H11.25V8.251ZM3.75 12.001C3.75 16.143 7.108 19.501 11.25 19.501H12.75C16.892 19.501 20.25 16.143 20.25 12.001C20.25 7.859 16.892 4.501 12.75 4.501H11.25C7.108 4.501 3.75 7.859 3.75 12.001ZM5.25 12.001C5.25 8.69 7.94 6.001 11.25 6.001H12.75C16.06 6.001 18.75 8.69 18.75 12.001C18.75 15.31 16.06 18.001 12.75 18.001H11.25C7.94 18.001 5.25 15.31 5.25 12.001Z" />
-            </svg>
+        <div className="flex items-center gap-3 p-4 border-b border-slate-700/50">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-lg shadow-blue-500/20">
+            <ComputerDesktopIcon className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-indigo-400">
             MyDesk
           </h1>
         </div>
