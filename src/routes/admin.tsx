@@ -2,9 +2,7 @@ import {
   createFileRoute,
   redirect,
   useLoaderData,
-  useNavigate,
   useRouteContext,
-  Link,
 } from '@tanstack/react-router'
 import React, { useState } from 'react'
 import {
@@ -12,9 +10,8 @@ import {
   ArrowUpCircleIcon,
   TrashIcon,
   ArrowPathIcon,
-  BookmarkSquareIcon,
 } from '@heroicons/react/24/outline'
-import { createUser, getUsers, updateUserRole, type User } from '../api'
+import { getUsers, updateUserRole, type User } from '../api'
 import { authService } from '../auth'
 import { deleteUser } from '../api'
 import toast from 'react-hot-toast'
@@ -53,9 +50,6 @@ function AdminPage() {
         <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-200">
           User Management
         </h1>
-        <button className="px-4 py-2 font-semibold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
-          test
-        </button>
       </div>
       <div className="overflow-x-auto bg-white dark:bg-slate-800/75 rounded-xl shadow-lg">
         <div className="align-middle inline-block min-w-full">
@@ -79,7 +73,6 @@ function AdminPage() {
                   <UserRow
                     key={user.id}
                     user={user}
-                    users={users}
                     setUsers={setUsers}
                   />
                 ))
@@ -104,15 +97,12 @@ function AdminPage() {
 // Component για μια σειρά χρήστη με λειτουργικότητα ενημέρωσης ρόλου
 function UserRow({
   user,
-  users,
   setUsers,
 }: {
   user: User
-  users: User[]
   setUsers: React.Dispatch<React.SetStateAction<User[]>>
 }) {
   const { auth } = useRouteContext({ from: '__root__' })
-  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
 
   const handleRoleChange = async (newRole: 'admin' | 'user') => {
@@ -229,14 +219,6 @@ function UserRow({
             >
               <TrashIcon className="h-6 w-6" />
             </button>
-            <Link
-              to="/my-bookings"
-              search={{ userId: user.id }}
-              title="View User Bookings"
-              className="p-2 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-            >
-              <BookmarkSquareIcon className="h-6 w-6" />
-            </Link>
           </>
         )}
       </td>
